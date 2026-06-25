@@ -1,0 +1,2162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Studio AI — Use Cases & Objections Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600;700;800&family=Overpass+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --primary: #7C3AED;
+    --primary-light: #EDE9FE;
+    --accent: #06B6D4;
+    --success: #16A34A;
+    --success-light: #DCFCE7;
+    --warning: #D97706;
+    --warning-light: #FEF3C7;
+    --danger: #DC2626;
+    --danger-light: #FEE2E2;
+    --surface: #FFFFFF;
+    --surface-2: #F8F7FF;
+    --surface-3: #F1F5F9;
+    --border: #E2E8F0;
+    --text: #0F172A;
+    --text-2: #475569;
+    --text-3: #94A3B8;
+    --mono: 'Overpass Mono', monospace;
+    --sans: 'Jost', sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--sans); background: var(--surface-3); color: var(--text); font-size: 14px; line-height: 1.5; }
+
+  .header {
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    padding: 18px 32px; display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .header-left { display: flex; align-items: center; gap: 12px; }
+  .header-badge { background: var(--primary); color: #fff; font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 8px; border-radius: 4px; }
+  .header-title { font-size: 16px; font-weight: 700; }
+  .header-sub { font-size: 12px; color: var(--text-3); }
+  .header-stats { display: flex; gap: 24px; }
+  .stat-pill .num { font-size: 20px; font-weight: 800; color: var(--primary); line-height: 1; display: block; }
+  .stat-pill .lbl { font-size: 10px; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 500; }
+
+  .tabs-bar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 32px; display: flex; }
+  .tab-btn { padding: 12px 20px; font-family: var(--sans); font-size: 13px; font-weight: 600; color: var(--text-3); background: none; border: none; border-bottom: 2px solid transparent; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+  .tab-btn:hover { color: var(--text-2); }
+  .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+  .filters-bar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 10px 32px; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .filter-label { font-size: 11px; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.06em; margin-right: 2px; }
+  .filter-chip { padding: 4px 12px; border-radius: 20px; border: 1px solid var(--border); background: var(--surface); font-family: var(--sans); font-size: 12px; font-weight: 500; color: var(--text-2); cursor: pointer; transition: all 0.12s; }
+  .filter-chip:hover { border-color: var(--primary); color: var(--primary); }
+  .filter-chip.active { background: var(--primary-light); border-color: var(--primary); color: var(--primary); font-weight: 600; }
+  .filter-select {
+    padding: 5px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    font-family: var(--sans);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-2);
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.12s;
+  }
+  .filter-select:focus { border-color: var(--primary); }
+
+  .filter-divider { width: 1px; height: 18px; background: var(--border); margin: 0 4px; }
+
+  .main { padding: 24px 32px; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  .section-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .section-title { font-size: 12px; font-weight: 700; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.08em; }
+  .count-badge { font-size: 11px; font-weight: 600; color: var(--text-3); background: var(--surface-3); padding: 2px 8px; border-radius: 10px; border: 1px solid var(--border); }
+
+  .cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 14px; }
+
+  .uc-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; transition: box-shadow 0.15s, border-color 0.15s; }
+  .uc-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.07); border-color: #C4B5FD; }
+
+  .uc-card-head { padding: 14px 16px 10px; border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+  .uc-title { font-size: 14px; font-weight: 700; color: var(--text); line-height: 1.3; }
+  .uc-source { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; padding: 2px 7px; border-radius: 4px; white-space: nowrap; flex-shrink: 0; }
+  .src-calls { background: #FEF3C7; color: #92400E; }
+  .src-website { background: #DBEAFE; color: #1E40AF; }
+  .src-both { background: #F3E8FF; color: #6B21A8; }
+  .usage-badge { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; padding: 2px 7px; border-radius: 4px; white-space: nowrap; }
+  .usage-internal { background: #FEF3C7; color: #92400E; }
+  .spyne-badge { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; padding: 2px 7px; border-radius: 4px; white-space: nowrap; }
+  .spyne-ob { background: #EDE9FE; color: #5B21B6; }
+  .spyne-cs { background: #ECFEFF; color: #0E7490; }
+  .spyne-ob-cs { background: #F0FDF4; color: #166534; }
+  .spyne-sales { background: #FEF3C7; color: #92400E; }
+  .usage-external { background: #DCFCE7; color: #166534; }
+  .usage-both { background: #DBEAFE; color: #1E40AF; }
+  .uc-card-head-badges { display: flex; gap: 5px; align-items: flex-start; flex-shrink: 0; }
+
+  .uc-card-body { padding: 12px 16px; }
+
+  /* STEPS */
+  .steps { margin-bottom: 12px; }
+  .steps-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-3); margin-bottom: 6px; }
+  .step { display: flex; gap: 8px; align-items: flex-start; margin-bottom: 5px; }
+  .step-num { width: 18px; height: 18px; border-radius: 50%; background: var(--primary-light); color: var(--primary); font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+  .step-text { font-size: 12.5px; color: var(--text-2); line-height: 1.4; }
+  .step-text strong { color: var(--text); font-weight: 600; }
+
+  .tip-row { background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 6px; padding: 6px 10px; margin-bottom: 10px; font-size: 12px; color: #92400E; line-height: 1.4; }
+  .tip-row::before { content: "Tip  "; font-weight: 700; }
+
+  .meta-row { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px; }
+  .meta-chip { font-size: 11px; font-weight: 500; padding: 2px 7px; border-radius: 4px; display: flex; align-items: center; gap: 3px; }
+  .chip-dept-spyne { background: #EDE9FE; color: #5B21B6; }
+  .chip-dept-dealer { background: #ECFEFF; color: #0E7490; }
+  .chip-feature { background: var(--surface-3); color: var(--text-2); border: 1px solid var(--border); }
+  .chip-tier-lite { background: #F0FDF4; color: #166534; }
+  .chip-tier-pro { background: #FFF7ED; color: #9A3412; }
+
+  .video-row { display: flex; align-items: center; justify-content: space-between; padding-top: 10px; border-top: 1px solid var(--border); }
+  .video-label { font-size: 11px; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.05em; }
+  .video-status { display: flex; align-items: center; gap: 6px; }
+  .video-dot { width: 7px; height: 7px; border-radius: 50%; }
+  .dot-pending { background: var(--text-3); }
+  .dot-progress { background: var(--warning); }
+  .dot-done { background: var(--success); }
+  .video-text { font-size: 12px; font-weight: 500; color: var(--text-2); }
+
+  /* OBJECTIONS */
+  .obj-table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  table { width: 100%; border-collapse: collapse; }
+  thead { background: var(--surface-2); border-bottom: 1px solid var(--border); }
+  th { padding: 10px 14px; font-size: 11px; font-weight: 700; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.07em; text-align: left; white-space: nowrap; }
+  td { padding: 12px 14px; font-size: 13px; color: var(--text-2); border-bottom: 1px solid var(--border); vertical-align: top; line-height: 1.5; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--surface-2); }
+  .obj-title { font-weight: 600; color: var(--text); font-size: 13px; margin-bottom: 3px; }
+  .obj-quote { font-size: 11.5px; color: var(--text-3); font-style: italic; font-family: var(--mono); margin-top: 4px; padding-left: 8px; border-left: 2px solid var(--border); line-height: 1.4; }
+  .severity-chip { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; padding: 2px 7px; border-radius: 4px; white-space: nowrap; }
+  .sev-high { background: var(--danger-light); color: var(--danger); }
+  .sev-med { background: var(--warning-light); color: var(--warning); }
+  .sev-low { background: var(--success-light); color: var(--success); }
+  .solve-tag { font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 4px; background: var(--primary-light); color: var(--primary); display: inline-block; margin: 2px 2px 2px 0; }
+  .solve-tag.not-yet { background: var(--surface-3); color: var(--text-3); border: 1px dashed var(--border); }
+  .obj-video-cell { display: flex; align-items: center; gap: 6px; }
+
+  .legend { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; padding: 10px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-2); font-weight: 500; }
+  .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+  /* MODULE TABS */
+  .mod-tabs-bar {
+    display: flex;
+    overflow-x: auto;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-bottom: none;
+    border-radius: 8px 8px 0 0;
+    scrollbar-width: none;
+  }
+  .mod-tabs-bar::-webkit-scrollbar { display: none; }
+  .mod-tab-btn {
+    padding: 11px 16px;
+    font-family: var(--sans);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-3);
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s;
+  }
+  .mod-tab-btn:hover { color: var(--text-2); background: var(--surface-2); }
+  .mod-tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+  .mod-panels { background: var(--surface); border: 1px solid var(--border); border-top: none; border-radius: 0 0 8px 8px; margin-bottom: 0; }
+  .mod-panel { display: none; }
+  .mod-panel.active { display: block; }
+  .mod-panel-head { display: flex; align-items: center; gap: 14px; padding: 18px 24px 14px; border-bottom: 1px solid var(--border); }
+  .mod-panel-title { font-size: 15px; font-weight: 800; color: var(--text); }
+  .mod-panel-sub { font-size: 12px; color: var(--text-3); margin-top: 1px; }
+
+  .sub-section { border-bottom: 1px solid var(--border); }
+  .sub-section:last-child { border-bottom: none; }
+  .sub-section-head {
+    display: flex; align-items: center; gap: 10px;
+    padding: 13px 24px; cursor: pointer;
+    background: var(--surface-2); user-select: none; transition: background 0.1s;
+  }
+  .sub-section-head:hover { background: var(--primary-light); }
+  .sub-title { font-size: 13px; font-weight: 700; color: var(--text); flex: 1; }
+  .sub-count { font-size: 11px; color: var(--text-3); font-weight: 500; background: var(--surface-3); padding: 2px 8px; border-radius: 10px; border: 1px solid var(--border); }
+  .sub-arrow { font-size: 12px; color: var(--text-3); }
+  .sub-section-body { padding: 18px 24px; }
+  .sub-section-body.collapsed { display: none; }
+
+  /* QC BOXES */
+  .qc-section { padding-top: 12px; border-top: 1px solid var(--border); margin-top: 4px; }
+  .qc-box { border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px; margin-bottom: 8px; background: var(--surface-2); }
+  .qc-box:last-child { margin-bottom: 0; }
+  .qc-box-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-3); margin-bottom: 8px; }
+  .qc-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .qc-status-select {
+    font-family: var(--sans); font-size: 11px; font-weight: 600;
+    padding: 3px 8px; border-radius: 4px; border: 1px solid var(--border);
+    background: var(--surface); cursor: pointer; outline: none;
+    color: var(--text-2); transition: border-color 0.12s;
+  }
+  .qc-status-select:focus { border-color: var(--primary); }
+  .qc-status-select.approved { background: var(--success-light); color: var(--success); border-color: #86EFAC; }
+  .qc-status-select.needs-fix { background: var(--danger-light); color: var(--danger); border-color: #FCA5A5; }
+  .qc-status-select.in-review { background: var(--warning-light); color: var(--warning); border-color: #FCD34D; }
+  .qc-notes { width: 100%; font-family: var(--sans); font-size: 12px; color: var(--text-2); padding: 6px 8px; border: 1px solid var(--border); border-radius: 4px; background: var(--surface); resize: vertical; min-height: 52px; outline: none; transition: border-color 0.12s; box-sizing: border-box; }
+  .qc-notes:focus { border-color: var(--primary); }
+  .qc-notes::placeholder { color: var(--text-3); }
+
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div class="header-badge">Studio AI</div>
+    <div>
+      <div class="header-title">Use Cases &amp; Objections Tracker</div>
+      <div class="header-sub">From OB/CS calls (Arali) + spyne.ai</div>
+    </div>
+  </div>
+  <div class="header-stats">
+    <div class="stat-pill"><span class="num">34</span><span class="lbl">Use Cases</span></div>
+    <div class="stat-pill"><span class="num">14</span><span class="lbl">Objections</span></div>
+    <div class="stat-pill"><span class="num" id="video-done-count">0</span><span class="lbl">Videos Done</span></div>
+  </div>
+</div>
+
+<div class="tabs-bar">
+  <button class="tab-btn active" onclick="switchTab('usecases',this)">Use Cases</button>
+  <button class="tab-btn" onclick="switchTab('objections',this)">Objections &amp; Solutions</button>
+</div>
+
+<div class="filters-bar" id="uc-filters">
+  <span class="filter-label">Spyne Team</span>
+  <select class="filter-select" id="spyne-select" onchange="selectFilter('spyne', this.value)">
+    <option value="all">All Teams</option>
+    <option value="OB">Onboarding</option>
+    <option value="CS">Customer Success</option>
+    <option value="Sales">Sales</option>
+  </select>
+  <div class="filter-divider"></div>
+  <span class="filter-label">Dealer Dept</span>
+  <select class="filter-select" id="dealer-select" onchange="selectFilter('dealer', this.value)">
+    <option value="all">All Departments</option>
+    <option value="Lot">Lot / Photo Team</option>
+    <option value="Marketing">Marketing</option>
+    <option value="BDC">BDC</option>
+    <option value="GM">GM / Owner</option>
+  </select>
+  <div class="filter-divider"></div>
+  <span class="filter-label">Usage</span>
+  <select class="filter-select" id="usage-select" onchange="selectFilter('usage', this.value)">
+    <option value="all">All Usage</option>
+    <option value="internal">Internal Only</option>
+    <option value="external">External / Client</option>
+    <option value="both">Internal + External</option>
+  </select>
+</div>
+
+<div class="filters-bar hidden" id="obj-filters">
+  <span class="filter-label">Type</span>
+  <button class="filter-chip active" onclick="toggleObjFilter(this,'type','all')">All</button>
+  <button class="filter-chip" onclick="toggleObjFilter(this,'type','bug')">App Bug</button>
+  <button class="filter-chip" onclick="toggleObjFilter(this,'type','training')">Training Gap</button>
+  <button class="filter-chip" onclick="toggleObjFilter(this,'type','commercial')">Commercial</button>
+  <div class="filter-divider"></div>
+  <span class="filter-label">Solved by video</span>
+  <button class="filter-chip active" onclick="toggleObjFilter(this,'solved','all')">All</button>
+  <button class="filter-chip" onclick="toggleObjFilter(this,'solved','yes')">Yes</button>
+  <button class="filter-chip" onclick="toggleObjFilter(this,'solved','no')">Not yet</button>
+</div>
+
+<div class="main">
+
+  <!-- USE CASES -->
+  <div class="tab-panel active" id="panel-usecases">
+    <div class="section-head">
+      <span class="section-title">All Use Cases</span>
+      <span class="count-badge" id="visible-uc-count">34 shown</span>
+    </div>
+    <div class="legend">
+      <div class="legend-item"><span class="usage-badge usage-both" style="font-size:10px">Internal + External</span>Spyne trains on it AND shareable with dealer</div>
+      <div class="legend-item"><span class="usage-badge usage-internal" style="font-size:10px">Internal Only</span>Spyne team reference only</div>
+      <div class="legend-item"><span class="usage-badge usage-external" style="font-size:10px">External / Client</span>Can be sent directly to dealer</div>
+      <div class="legend-item"><span class="legend-dot" style="background:var(--text-3)"></span>Video Pending</div>
+      <div class="legend-item"><span class="legend-dot" style="background:var(--warning)"></span>In Progress</div>
+      <div class="legend-item"><span class="legend-dot" style="background:var(--success)"></span>Done</div>
+    </div>
+
+    <div class="mod-tabs-bar">
+      <button class="mod-tab-btn  active" onclick="switchModule('studio-app',this)">Studio App</button>
+      <button class="mod-tab-btn" onclick="switchModule('console',this)">Console</button>
+      <button class="mod-tab-btn" onclick="switchModule('backgrounds',this)">Backgrounds and Branding</button>
+      <button class="mod-tab-btn" onclick="switchModule('smart-campaigns',this)">Smart Campaigns</button>
+      <button class="mod-tab-btn" onclick="switchModule('smart-view',this)">Smart View</button>
+      <button class="mod-tab-btn" onclick="switchModule('car-tours',this)">Car Tours / 360</button>
+      <button class="mod-tab-btn" onclick="switchModule('pro-features',this)">Pro Features</button>
+    </div>
+    <div class="mod-panels">
+    <div class="mod-panel  active" id="mod-studio-app">
+      <div class="mod-panel-head">
+        
+        <div>
+          <div class="mod-panel-title">Studio App</div>
+          <div class="mod-panel-sub">4 use cases across 3 sections</div>
+        </div>
+      </div>
+      <div class="sub-section">
+        <div class="sub-section-head" onclick="toggleSub(this)">
+          <span class="sub-title">Shooting a Vehicle</span>
+          <span class="sub-count">2 use cases</span>
+          <span class="sub-arrow">▾</span>
+        </div>
+        <div class="sub-section-body">
+          <div class="cards-grid">
+          <div class="uc-card" data-spyne="OB" data-dealer="Lot" data-usage="both" data-tier="Lite" data-video="pending">
+        <div class="uc-card-head">
+          <div class="uc-title">Shoot a vehicle from scratch using the app</div>
+          <div class="uc-card-head-badges">
+            <span class="spyne-badge spyne-ob">OB</span>
+            <span class="usage-badge usage-both">Internal + External</span>
+            <span class="uc-source src-calls">Calls</span>
+          </div>
+        </div>
+        <div class="uc-card-body">
+          <div class="steps">
+            <div class="steps-label">How it works</div>
+            <div class="step"><span class="step-num">1</span><span class="step-text">Open app, log in, tap <strong>Start Shoot</strong>, scan the VIN barcode</span></div>
+            <div class="step"><span class="step-num">2</span><span class="step-text">Select vehicle body type (sedan, SUV, pickup) so the white overlay stencil matches the car shape</span></div>
+            <div class="step"><span class="step-num">3</span><span class="step-text">Hold phone at <strong>chest height, 6-10 ft from car</strong>. Green screen = correct angle. Red = tilt fix needed</span></div>
+            <div class="step"><span class="step-num">4</span><span class="step-text">Walk around in <strong>30 to 90 seconds</strong> for the 360 spin video. Do not go under 30 sec</span></div>
+            <div class="step"><span class="step-num">5</span><span class="step-text">App shows guided stencils for each exterior angle. Capture all, then move inside for dashboard, steering, odometer</span></div>
+            <div class="step"><span class="step-num">6</span><span class="step-text">Tap <strong>Process</strong>. Spyne AI processes in background. Status shows in Processed / Processing / Failed dashboard</span></div>
+          </div>
+          <div class="tip-row">Shoot when there is less direct sunlight to avoid body panel reflections affecting background removal.</div>
+          <div class="video-row">
+            <span class="video-label">How-to video</span>
+            <div class="video-status"><span class="video-dot dot-pending"></span><span class="video-text">Pending</span></div>
+              <div class="qc-section">
+              <div class="qc-box">
+                <div class="qc-box-label">OB Review</div>
+                <div class="qc-row">
+                  <select class="qc-status-select" onchange="updateQCStatus(this,'shoot-a-vehicle-from-scratch-u-ob')" id="qcs-shoot-a-vehicle-from-scratch-u-ob">
+                    <option value="">In Review</option>
+                    <option value="approved">Approved</option>
+                    <option value="needs-fix">Needs Fix</option>
+                  </select>
+                </div>
+                <textarea class="qc-notes" placeholder="Add notes..." id="qcn-shoot-a-vehicle-from-scratch-u-ob" onblur="saveNote(this,'shoot-a-vehicle-from-scratch-u-ob')"></textarea>
+              </div>
+              </div>
+          </div>
+        </div>
+      </div>
+          <div class="uc-card" data-spyne="OB" data-dealer="Lot" data-usage="both" data-tier="Lite" data-video="pending">
+        <div class="uc-card-head">
+          <div class="uc-title">First shoot practice: scan VIN, select body type, use stencil overlay</div>
+          <div class="uc-card-head-badges">
+            <span class="spyne-badge spyne-ob">OB</span>
+            <span class="usage-badge usage-both">Internal + External</span>
+            <span class="uc-source src-calls">Calls</span>
+          </div>
+        </div>
+        <div class="uc-card-body">
+          <div class="steps">
+            <div class="steps-label">How it works</div>
+            <div class="step"><span class="step-num">1</span><span class="step-text">Tap <strong>Start Shoot</strong>. The in-app VIN scanner opens. Scan the barcode on the driver side door jamb to auto-populate the VIN</span></div>
+            <div class="step"><span class="step-num">2</span><span class="step-text">Verify the VIN number on screen. Proceed to <strong>vehicle type selection</strong>: Sedan, SUV, Hatchback, Pickup Truck, Van</span></div>
+            <div class="step"><span class="step-num">3</span><span class="step-text">The stencil overlay on your camera screen changes shape to match the selected body type. Align the car body inside the stencil before shooting each angle</span></div>
+            <div class="step"><span class="step-num">4</span><span class="step-text">App guides you through each required angle sequentially. You cannot skip required angles -- the app will not move forward until that angle is captured</span></div>
+          </div>
+          <div class="tip-row">If the VIN barcode is damaged or unreadable, type the VIN manually into the scan screen. Do not select the wrong body type -- the stencil shape affects alignment quality for all angles.</div>
+          <div class="video-row">
+            <span class="video-label">How-to video</span>
+            <div class="video-status"><span class="video-dot dot-pending"></span><span class="video-text">Pending</span></div>
+              <div class="qc-section">
+              <div class="qc-box">
+                <div class="qc-box-label">OB Review</div>
+                <div class="qc-row">
+                  <select class="qc-status-select" onchange="updateQCStatus(this,'first-shoot-practice--scan-vin-ob')" id="qcs-first-shoot-practice--scan-vin-ob">
+                    <option value="">In Review</option>
+                    <option value="approved">Approved</option>
+                    <option value="needs-fix">Needs Fix</option>
+                  </select>
+                </div>
+                <textarea class="qc-notes" placeholder="Add notes..." id="qcn-first-shoot-practice--scan-vin-ob" onblur="saveNote(this,'first-shoot-practice--scan-vin-ob')"></textarea>
+              </div>
+              </div>
+          </div>
+        </div>
+      </div>
+          </div>
+        </div>
+      </div>
+      <div class="sub-section">
+        <div class="sub-section-head" onclick="toggleSub(this)">
+          <span class="sub-title">Managing Drafts</span>
+          <span class="sub-count">1 use case</span>
+          <span class="sub-arrow">▾</span>
+        </div>
+        <div class="sub-section-body">
+          <div class="cards-grid">
+          <div class="uc-card" data-spyne="OB CS" data-dealer="Lot" data-usage="both" data-tier="Lite" data-video="pending">
+        <div class="uc-card-head">
+          <div class="uc-title">Resume a draft shoot that was left incomplete</div>
+          <div class="uc-card-head-badges">
+            <span class="spyne-badge spyne-ob-cs">OB + CS</span>
+            <span class="usage-badge usage-both">Internal + External</span>
+            <span class="uc-source src-calls">Calls</span>
+          </div>
+        </div>
+        <div class="uc-card-body">
+          <div class="steps">
+            <div class="steps-label">How it works</div>
+            <div class="step"><span class="step-num">1</span><span class="step-text">In the app inventory list, find VINs with <strong>Incomplete</strong> status (means process was not tapped after shooting)</span></div>
+            <div class="step"><span class="step-num">2</span><span class="step-text">Tap <strong>Resume Shoot</strong> CTA on that VIN. Camera opens directly to remaining angles</span></div>
+            <div class="step"><span class="step-num">3</span><span class="step-text">Capture the remaining images, select which products to process (images, 360, video), tap <strong>Process</strong></span></div>
+          </div>
+          <div class="tip-row">Incomplete does not mean failed. It only means the Process button was never tapped after shooting finished.</div>
+          <div class="video-row">
+            <span class="video-label">How-to video</span>
+            <div class="video-status"><span class="video-dot dot-pending"></span><span class="video-text">Pending</span></div>
+              <div class="qc-section">
+              <div class="qc-box">
+                <div class="qc-box-label">OB Review</div>
+                <div class="qc-row">
+                  <select class="qc-status-select" onchange="updateQCStatus(this,'resume-a-draft-shoot-that-was-ob')" id="qcs-resume-a-draft-shoot-that-was-ob">
+                    <option value="">In Review</option>
+                    <option value="approved">Approved</option>
+                    <option value="needs-fix">Needs Fix</option>
+                  </select>
+                </div>
+                <textarea class="qc-notes" placeholder="Add notes..." id="qcn-resume-a-draft-shoot-that-was-ob" onblur="saveNote(this,'resume-a-draft-shoot-that-was-ob')"></textarea>
+              </div>
+              <div class="qc-box">
+                <div class="qc-box-label">CS Review</div>
+                <div class="qc-row">
+                  <select class="qc-status-select" onchange="updateQCStatus(this,'resume-a-draft-shoot-that-was-cs')" id="qcs-resume-a-draft-shoot-that-was-cs">
+                    <option value="">In Review</option>
+                    <option value="approved">Approved</option>
+                    <option value="needs-fix">Needs Fix</option>
+                  </select>
+                </div>
+                <textarea class="qc-notes" placeholder="Add notes..." id="qcn-resume-a-draft-shoot-that-was-cs" onblur="saveNote(this,'resume-a-draft-shoot-that-was-cs')"></textarea>
+              </div>
+              </div>
+          </div>
+        </div>
+      </div>
+          </div>
+        </div>
+      </div>
+      <div class="sub-section">
+        <div class="sub-section-head" onclick="toggleSub(this)">
+          <span class="sub-title">App Setup and Teams</span>
+          <span class="sub-count">1 use case</span>
+          <span class="sub-arrow">▾</span>
+        </div>
+        <div class="sub-section-body">
+          <div class="cards-grid">
+          <div class="uc-card" data-spyne="OB" data-dealer="Lot" data-usage="both" data-tier="Lite" data-video="pending">
+        <div class="uc-card-head">
+          <div class="uc-title">Use the Test Team before shooting live inventory</div>
+          <div class="uc-card-head-badges">
+            <span class="spyne-badge spyne-ob">OB</span>
+            <span class="usage-badge usage-both">Internal + External</span>
+            <span class="uc-source src-calls">Calls</span>
+          </div>
+        </div>
+        <div class="uc-card-body">
+          <div class="steps">
+            <div class="steps-label">How it works</div>
+            <div class="step"><span class="step-num">1</span><span class="step-text">On app login, tap the team name at the top. A dropdown shows two teams: your <strong>main team</strong> and a <strong>Test team</strong></span></div>
+            <div class="step"><span class="step-num">2</span><span class="step-text">Switch to the <strong>Test team</strong>. Shoot any car. Practice angles, 360 walk, interior</span></div>
+            <div class="step"><span class="step-num">3</span><span class="step-text">Anything shot in Test does not publish to the website or go to your DMS. Safe to experiment</span></div>
+            <div class="step"><span class="step-num">4</span><span class="step-text">Once comfortable, switch back to the main team. All live shoots go here and will publish</span></div>
+          </div>
+          <div class="tip-row">Always confirm you are in the correct team before starting a real shoot. Shooting in the wrong team means the images route to the wrong background or do not publish at all.</div>
+          <div class="video-row">
+            <span class="video-label">How-to video</span>
+            <div class="video-status"><span class="video-dot dot-pending"></span><span class="video-text">Pending</span></div>
+              <div class="qc-section">
+              <div class="qc-box">
+                <div class="qc-box-label">OB Review</div>
+                <div class="qc-row">
+                  <select class="qc-status-select" onchange="updateQCStatus(this,'use-the-test-team-before-shoot-ob')" id="qcs-use-the-test-team-before-shoot-ob">
+                    <option value="">In Review</option>
+                    <option value="approved">Approved</option>
+                    <option value="needs-fix">Needs Fix</option>
+                  </select>
+                </div>
+                <textarea class="qc-notes" placeholder="Add notes..." id="qcn-use-the-test-team-before-shoot-ob" onblur="saveNote(this,'use-the-test-team-before-shoot-ob')"></textarea>
+              </div>
+              </div>
+          </div>
+        </div>
+      </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="mod-panel" id="mod-console">
+      <div class="mod-panel-head">
+        
+        <div>
+          <div class="mod-panel-title">Console</div>
+          <div class="mod-panel-sub">12 use cases across 5 sections</div>
+        </div>
+      </div>
+      <div class="sub-section">
+        <div class="sub-section-head" onclick="toggleSub(this)">
+          <span class="sub-title">Upload and Process</span>
+          <span class="sub-count">2 use cases</span>
+          <span class="sub-arrow">▾</span>
+        </div>
+        <div class="sub-section-body">
+          <div class="cards-grid">
+          <div class="uc-card" data-spyne="OB CS" data-dealer="Lot Marketing" data-usage="both" data-tier="Lite" data-video="pending">
+        <div class="uc-card-head">
+          <div class="uc-title">Upload images directly from console (no app shoot)</div>
+          <div class="uc-card-head-badges">
+            <span class="spyne-badge spyne-ob-cs">OB + CS</span>
+            <span class="usage-badge usage-both">Internal + External</span>
+            <span class="uc-source src-calls">Calls</span>
+          </div>
+        </div>
+        <div class="uc-card-body">
+          <div class="steps">
+            <div class="steps-label">How it works</div>
+            <div class="step"><span class="step-num">1</span><span class="step-text">Go to <strong>console.spyne.ai</strong>. Click <strong>Studio AI</strong> on the homepage</span></div>
+            <div class="step"><span class="step-num">2</span><span class="step-text">Enter VIN number or stock number. Click <strong>Proceed</strong></div>
+            <div class="step"><span class="step-num">3</span><span class="step-text">Click <strong>Upload Images</strong>. Select images from your device. Upload any count -- 20, 40, 60+ images all work</span></div>
+            <div class="step"><span class="step-num">4</span><span class="step-text">Click <strong>See All</strong> to browse all available backgrounds for your account. Select the background</span></div>
+            <div class="step"><span class="step-num">5</span><span class="step-text">Click <strong>Transform Media</strong>. Download processed images from the top of the page once done</span></div>
+          </div>
+          <div class="tip-row">Use this when you already have images on your device and don't need to reshoot. The app is for shooting new cars only. For adding images to an existing VIN, use the console, not the app gallery.</div>
+          <div class="video-row">
+            <span class="video-label">How-to video</span>
+            <div class="video-status"><span class="video-dot dot-pending"></span><span class="video-text">Pending</span></div>
+              <div class="qc-section">
+              <div class="qc-box">
+                <div class="qc-box-label">OB Review</div>
+                <div class="qc-row">
+                  <select class="qc-status-select" onchange="updateQCStatus(this,'upload-images-directly-from-co-ob')" id="qcs-upload-images-directly-from-co-ob">
+                    <option value="">In Review</option>
+                    <option value="approved">Approved</option>
+                    <option value="needs-fix">Needs Fix</option>
+                  </select>
+                </div>
+                <textarea class="qc-notes" placeholder="Add notes..." id="qcn-upload-images-directly-from-co-ob" onblur="saveNote(this,'upload-images-directly-from-co-ob')"></textarea>
+              </div>
+              <div class="qc-box">
+                <div class="qc-box-label">CS Review</div>
+                <div class="qc-row">
+                  <select class="qc-status-select" onchange="updateQCStatus(this,'upload-images-directly-from-co-cs')" id="qcs-upload-images-directly-from-co-cs">
+                    <option value="">In Review</option>
+                    <option value="approved">Approved</option>
+                    <option value="needs-fix">Needs Fix</option>
+                  </select>
+                </div>
+                <textarea class="qc-notes" placeholder="Add notes..." id="qcn-upload-images-directly-from-co-cs" onblur="saveNote(this,'upload-images-directly-from-co-cs')"></textarea>
+              </div>
+              </div>
+          </div>
+        </div>
+      </div>
+          <div class="uc-card" data-spyne="OB CS" data-dealer="Lot" data-usage="both" data-tier="Lite" data-video="pending">
+        <div class="uc-card-head">
+          <div class="uc-title">Add, delete, or reshoot a single image on a processed VIN</div>
+          <div class="uc-card-head-badges">
+            <span class="spyne-badge spyne-ob-cs">OB + CS</span>
+            <span class="usage-badge usage-both">Internal + External</span>
+            <span class="uc-source src-calls">Calls</span>
+          </div>
+        </div>
+        <div class="uc-card-body">
+          <div class="steps">
+            <div class="steps-label">How it works</div>
+            <div class="step"><span class="step-num">1</span><span class="step-text">Open the VIN in console. Click <strong>Edit in Virtual Studio</strong></span></div>
+            <div class="step"><span class="step-num">2</span><span class="step-text">Toggle to <strong>View Input</strong>. Hover any image to see the <strong>three-dot menu</strong></span></div>
+            <div class="step"><span class="step-num">3</span><span class="step-text">Delete the specific image. Or click <strong>Add Media</strong> to upload a replacement</span></div>
+            <div class="step"><span class="step-num">4</span><span class="step-text">Click <strong>Transform Media</strong> to reprocess only the changed images</span></div>
+          </div>
+          <div class="video-row">
+            <span class="video-label">How-to video</span>
+            <div class="video-status"><span class="video-dot dot-pending"></span><span class="video-text">Pending</span></div>
+              <div class="qc-section">
+              <div class="qc-box">
+                <div class="qc-box-label">OB Review</div>
+                <div class="qc-row">
+                  <select class="qc-status-select" onchange="updateQCStatus(this,'add--delete--or-reshoot-a-sing-ob')" id="qcs-add--delete--or-reshoot-a-sing-ob">
+                    <option value="">In Review</option>
+                    <option value="approved">Approved</option>
+                    <option value="needs-fix">Needs Fix</option>
+                  </select>
+                </div>
+                <textarea class="qc-notes" placeholder="Add notes..." id="qcn-add--delete--or-reshoot-a-sing-ob" onblur="saveNote(this,'add--delete--or-reshoot-a-sing-ob')"></textarea>
+              </div>
+              <div class="qc-box">
+                <div class="qc-box-label">CS Review</div>
+                <div class="qc-row">
+                  <select class="qc-status-select" onchange="updateQCStatus(this,'add--delete--or-reshoot-a-sing-cs')" id="qcs-add--delete--or-reshoot-a-sing-cs">
+                    <option value="">In Review</option>
+                    <option value="approved">Approved</option>
+                    <option value="needs-fix">Needs Fix</option>
+                  </select>
+                </div>
+                <textarea class="qc-notes" placeholder="Add notes..." id="qcn-add--delete--or-reshoot-a-sing-cs" onblur="saveNote(this,'add--delete--or-reshoot-a-sing-cs')"></textarea>
+              </div>
+              </div>
+          </div>
+        </div>
+      </div>
+          </div>
+        </div>
+      </div>
+      <div class="sub-section">
+        <div class="sub-section-head" onclick="toggleSub(this)">
+          <span class="sub-title">Inventory and Resequence</span>
+          <span class="sub-count">3 use cases</span>
+          <span class="sub-arrow">▾</span>
+        </div>
+        <div class="sub-section-body">
+          <div class="cards-grid">
+          <div class="uc-card" data-spyne="CS" data-dealer="Lot Marketing" data-usage="both" data-tier="Lite" data-video="pending">
+        <div class="uc-card-head">
+          <div class="uc-title">Resequence images and change the hero angle</div>
+          <div class="uc-card-head-badges">
+            <span class="spyne-badge spyne-cs">CS</span>
+            <span class="usage-badge usage-both">Internal + External</span>
+            <span class="uc-source src-calls">Calls</span>
+          </div>
+        </div>
+        <div class="uc-card-body">
+          <div class="steps">
+            <div class="steps-label">How it works</div>
+            <div class="step"><span class="step-num">1</span><span class="step-text">Open the VIN in console. Go to the <strong>Media</strong> section. Find the image you want as the new first angle</span></div>
+            <div class="step"><span class="step-num">2</span><span class="step-text">Click the <strong>three dots</strong> on that image. Click <strong>Resequence</strong></span></div>
+            <div class="step"><span class="step-num">3</span><span class="step-text">Drag and drop images into the order you want. The first image in this view becomes the hero angle on the website</span></div>
+            <div class="step"><span class="step-num">4</span><span class="step-text">Click <strong>Save Sequence</strong>. Updated sequence will go live on the website in the next feed push (within ~6 hours)</span></div>
+          </div>
+          <div class="tip-row">Auto sequencing can be turned off per account if you want images to appear in the exact order they were shot. Ask your CSM to disable it if Spyne's default hero angle does not match your standard.</div>
+          <div class="video-row">
+            <span class="video-label">How-to video</span>
+            <div class="video-status"><span class="video-dot dot-pending"></span><span class="video-text">Pending</span></div>
+              <div class="qc-section">
+              <div class="qc-box">
+                <div class="qc-box-label">CS Review</div>
+                <div class="qc-row">
+                  <select class="qc-status-select" onchange="updateQCStatus(this,'resequence-images-and-change-t-cs')" id="qcs-resequence-images-and-change-t-cs">
+                    <option value="">In Review</option>
+                    <option value="approved">Approved</option>
+                    <option value="needs-fix">Needs Fix</option>
+                  </select>
+                </div>
+                <textarea class="qc-notes" placeholder="Add notes..." id="qcn-resequence-images-and-change-t-cs" onblur="saveNote(this,'resequence-images-and-change-t-cs')"></textarea>
+              </div>
+              </div>
+          </div>
+        </div>
+      </div>
+          <div class="uc-card" data-spyne="CS" data-dealer="GM Marketing" data-usage="internal" data-tier="Lite" data-video="pending">
+        <div class="uc-card-head">
+          <div class="uc-title">Check console inventory filters to audit publishing status across all VINs</div>
+          <div class="uc-card-head-badges">
+            <span class="spyne-badge spyne-cs">CS</span>
+            <span class="usage-badge usage-internal">Internal Only</span>
+            <span class="uc-source src-calls">Calls</span>
+          </div>
+        </div>
+        <div class="uc-card-body">
+          <div class="steps">
+            <div class="steps-label">How it works</div>
+            <div class="step"><span class="step-num">1</span><span class="step-text">Go to <strong>Studio AI > Active Inventory</strong>. Use the filters at the top: by date, by source (App / Console / FTP), by product (Images / 360 / Video)</span></div>
+            <div class="step"><span class="step-num">2</span><span class="step-text">Filter by status: <strong>Assured</strong> = QC passed and sent to DMS. <strong>In Review</strong> = being checked. <strong>Failed</strong> = needs attention</span></div>
+            <div class="step"><span class="step-num">3</span><span class="step-text">Check the <strong>Published date/time</strong> column to confirm when each VIN was sent to the DMS</span></div>
+            <div class="step"><span class="step-num">4</span><span class="step-text">VINs with <strong>zero images</strong> in the list = VINs in your DMS feed that have fewer than the minimum image threshold. These are not processed</span></div>
+          </div>
+          <div class="tip-row">Use the "Select All Filters" view regularly to catch anything pending or failed before your weekly CS review call.</div>
+          <div class="video-row">
+            <span class="video-label">How-to video</span>
+            <div class="video-status"><span class="video-dot dot-pending"></span><span class="video-text">Pending</span></div>
+              <div class="qc-section">
+              <div class="qc-box">
+                <div class="qc-box-label">CS Review</div>
+                <div class="qc-row">
+                  <select class="qc-status-select" onchange="updateQCStatus(this,'check-console-inventory-filter-cs')" id="qcs-check-console-inventory-filter-cs">
+                    <option value="">In Review</option>
+                    <option value="approved">Approved</option>
+                    <option value="needs-fix">Needs Fix</option>
+                  </select>
+                </div>
+                <textarea class="qc-notes" placeholder="Add notes..." id="qcn-check-console-inventory-filter-cs" onblur="saveNote(this,'check-console-inventory-filter-cs')"></textarea>
+              </div>
+              </div>
+          </div>
+        </div>
+      </div>
+          <div class="uc-card" data-spyne="OB CS" data-dealer="Lot Marketing" data-usage="internal" data-tier="Lite" data-video="pending">
+        <div class="uc-card-head">
+          <div class="uc-title">Navigate the console: finding the right section after a UI update</div>
+          <div class="uc-card-head-badges">
+            <span class="spyne-badge spyne-ob-cs">OB + CS</span>
+            <span class="usage-badge usage-internal">Internal Only</span>
+            <span class="uc-source src-calls">Calls</span>
+          </div>
+        </div>
+        <div class="uc-card-body">
+          <div class="steps">
+            <div class="steps-label">How it works</div>
+            <div class="step"><span class="step-num">1</span><span class="step-text">If <strong>Studio AI</strong> tab is not rendering or showing blank: log out and log back in. The console UI updates automatically on re-login</span></div>
+            <div class="step"><span class="step-num">2</span><span class="step-text">On the old console version: go to <strong>Inventory AI</strong> (not Studio AI) to find your processed vehicles</span></div>
+            <div class="step"><span class="step-num">3</span><span class="step-text">New console version: <strong>Studio AI &gt; Active Inventory</strong> is the main repository. All processed VINs with status, backgrounds, and edit options live here</span></div>
+          </div>
+          <div class="video-row">
+            <span class="video-label">How-to video</span>
+            <div class="video-status"><span class="video-dot dot-pending"></span><span class="video-text">Pending</span></div>
+              <div class="qc-section">
+              <div class="qc-box">
+                <div class="qc-box-label">OB Review</div>
+                <div class="qc-row">
+                  <select class="qc-status-select" onchange="updateQCStatus(this,'navigate-the-console--finding-ob')" id="qcs-navigate-the-console--finding-ob">
+                    <option value="">In Review</option>
+                    <option value="approved">Approved</option>
+                    <option value="needs-fix">Needs Fix</option>
+                  </select>
+                </div>
+                <textarea class="qc-notes" placeholder="Add notes..." id="qcn-navigate-the-console--finding-ob" onblur="saveNote(this,'navigate-the-console--finding-ob')"></textarea>
+              </div>
+              <div class="qc-box">
+                <div class="qc-box-label">CS Review</div>
+                <div class="qc-row">
+                  <select class="qc-status-select" onchange="updateQCStatus(this,'navigate-the-console--finding-cs')" id="qcs-navigate-the-console--finding-cs">
+                    <option value="">In Review</option>
+                    <option value="approved">Approved</option>
+                    <option value="needs-fix">Needs Fix</option>
+                  </select>
+                </div>
+                <textarea class="qc-notes" placeholder="Add notes..." id="qcn-navigate-the-console--finding-cs" onblur="saveNote(this,'navigate-the-console--finding-cs')"></textarea>
+              </div>
+              </div>
+          </div>
+        </div>
+      </div>
+          </div>
+        </div>
+      </div>
+      <div class="sub-section">
+        <div class="sub-section-head" onclick="toggleSub(this)">
+          <span class="sub-title">QC and Status</span>
+          <span class="sub-count">1 use case</span>
+          <span class="sub-arrow">▾</span>
+        </div>
+        <div class="sub-section-body">
+          <div class="cards-grid">
+          <div class="uc-card" data-spyne="OB CS" data-dealer="Lot Marketing" data-usage="both" data-tier="Lite" data-video="pending">
+        <div class="uc-card-head">
+          <div class="uc-title">Read QC status: what "In Review", "Failed", and "Incomplete" actually mean</div>
+          <div class="uc-card-head-badges">
+            <span class="spyne-badge spyne-ob-cs">OB + CS</span>
+            <span class="usage-badge usage-both">Internal + External</span>
+            <span class="uc-source src-calls">Calls</span>
+          </div>
+        </div>
+        <div class="uc-card-body">
+          <div class="steps">
+            <div class="steps-label">Status definitions</div>
+            <div class="step"><span class="step-num">1</span><span class="step-text"><strong>In Review</strong> = images are processed and currently being checked by Spyne QC team. Do not reshoot</span></div>
+            <div class="step"><span class="step-num">2</span><span class="step-text"><strong>Failed</strong> = QC rejected the output. Can be due to bad input angle, crop, or AI error. Raise a concern to CSM or raise a remark from console</span></div>
+            <div class="step"><span class="step-num">3</span><span class="step-text"><strong>Incomplete</strong> = shoot was done but Process was never tapped. Resume from app, no new shoot needed</span></div>
+            <div class="step"><span class="step-num">4</span><span class="step-text"><strong>360 Failed</strong> = only the spin failed, not the images. Do not reshoot the full car. Raise a remark and QC team fixes it</span></div>
+          </div>
+          <div class="tip-row">QC SLA is 24 hours. If a 360 fails, raise a remark within 4 hours if you want to avoid going back to the lot.</div>
+          <div class="video-row">
+            <span class="video-label">How-to video</span>
+            <div class="video-status"><span class="video-dot dot-pending"></span><span class="video-text">Pending</span></div>
+              <div class="qc-section">
+              <div class="qc-box">
+                <div class="qc-box-label">OB Review</div>
+                <div class="qc-row">
+                  <select class="qc-status-select" onchange="updateQCStatus(this,'read-qc-status--what--in-revie-ob')" id="qcs-read-qc-status--what--in-revie-ob">
+                    <option value="">In Review</option>
+                    <option value="approved">Approved</option>
+                    <option value="needs-fix">Needs Fix</option>
+                  </select>
+                </div>
+                <textarea class="qc-notes" placeholder="Add notes..." id="qcn-read-qc-status--what--in-revie-ob" onblur="saveNote(this,'read-qc-status--what--in-revie-ob')"></textarea>
+              </div>
+              <div class="qc-box">
+                <div class="qc-box-label">CS Review</div>
+                <div class="qc-row">
+                  <select class="qc-status-select" onchange="updateQCStatus(this,'read-qc-status--what--in-revie-cs')" id="qcs-read-qc-status--what--in-revie-cs">
+                    <option value="">In Review</option>
+                    <option value="approved">Approved</option>
+                    <option value="needs-fix">Needs Fix</option>
+                  </select>
+                </div>
+                <textarea class="qc-notes" placeholder="Add notes..." id="qcn-read-qc-status--what--in-revie-cs" onblur="saveNote(this,'read-qc-status--what--in-revie-cs')"></textarea>
+              </div>
+              </div>
+          </div>
+        </div>
+      </div>
+          </div>
+        </div>
+      </div>
+      <div class="sub-section">
+        <div class="sub-section-head" onclick="toggleSub(this)">
+          <span class="sub-title">Publishing Flow</span>
+          <span class="sub-count">4 use cases</span>
+          <span class="sub-arrow">▾</span>
+        </div>
+        <div class="sub-section-body">
+          <div class="cards-grid">
+          <div class="uc-card" data-spyne="OB" data-dealer="GM Marketing" data-usage="internal" data-tier="Lite" data-video="pending">
+        <div class="uc-card-head">
+          <div class="uc-title">Understand the full end-to-end publishing flow (app to website)</div>
+          <div class="uc-card-head-badges">
+            <span class="spyne-badge spyne-ob">OB</span>
+            <span class="usage-badge usage-internal">Internal Only</span>
+            <span class="uc-source src-calls">Calls</span>
+          </div>
+        </div>
+        <div class="uc-card-body">
+          <div class="steps">
+            <div class="steps-label">How it works</div>
+            <div class="step"><span class="step-num">1</span><span class="step-text"><strong>Shoot or upload</strong> images via app or console. Spyne processes and backgrounds them</span></div>
+            <div class="step"><span class="step-num">2</span><span class="step-text"><strong>QC</strong>: AI processes first. Manual QC team reviews and marks as <strong>Assured</strong>. SLA: 3-6 hours typical</span></div>
+            <div class="step"><span class="step-num">3</span><span class="step-text"><strong>Images</strong>: sent to your DMS/IMS (HomeNet, vAuto, WinSolutions etc) via integration. IMS pushes to website and marketplaces (CarGurus, AutoTrader etc). Timeline: 12-14 hours total from shoot to website</span></div>
+            <div class="step"><span class="step-num">4</span><span class="step-text"><strong>360 spin and video</strong>: sent directly to website provider via a script (not through IMS). Appear on VDP only, not on listing pages</span></div>
+            <div class="step"><span class="step-num">5</span><span class="step-text">Track status in console: <strong>In Review > Assured > Published</strong>. Green checkmark on a VIN = sent to DMS successfully</span></div>
+          </div>
+          <div class="tip-row">If images show as Published in Spyne but not live on website, the DMS has received them but not yet refreshed. Escalate to the DMS provider, not Spyne. Spyne's job ends at the DMS delivery.</div>
+          <div class="video-row">
+            <span class="video-label">How-to video</span>
+            <div class="video-status"><span class="video-dot dot-pending"></span><span class="video-text">Pending</span></div>
+              <div class="qc-section">
+              <div class="qc-box">
+                <div class="qc-box-label">OB Review</div>
+                <div class="qc-row">
+                  <select class="qc-status-select" onchange="updateQCStatus(this,'understand-the-full-end-to-end-ob')" id="qcs-understand-the-full-end-to-end-ob">
+                    <option value="">In Review</option>
+                    <option value="approved">Approved</option>
+                    <option value="needs-fix">Needs Fix</option>
+                  </select>
+                </div>
+                <textarea class="qc-notes" placeholder="Add notes..." id="qcn-understand-the-full-end-to-end-ob" onblur="saveNote(this,'understand-the-full-end-to-end-ob')"></textarea>
+              </div>
+              </div>
+          </div>
+        </div>
+      </div>
+          <div class="uc-card" data-spyne="CS" data-dealer="GM" data-usage="internal" data-tier="Lite" data-video="pending">
+        <div class="uc-card-head">
+          <div class="uc-title">What happens to a VIN when it gets sold (draft mode and re-trade)</div>
+          <div class="uc-card-head-badges">
+            <span class="spyne-badge spyne-cs">CS</span>
+            <span class="usage-badge usage-internal">Internal Only</span>
+            <span class="uc-source src-calls">Calls</span>
+          </div>
+        </div>
+        <div class="uc-card-body">
+          <div class="steps">
+            <div class="steps-label">How it works</div>
+            <div class="step"><span class="step-num">1</span><span class="step-text">When a vehicle is marked sold in your DMS, Spyne stops receiving its feed. Images remain stored in console but stop publishing</span></div>
+            <div class="step"><span class="step-num">2</span><span class="step-text">If the same VIN re-enters inventory (trade-in comes back), and the DMS sends it with <strong>zero images</strong>: Spyne deletes the old images and puts the VIN in <strong>Draft mode</strong></span></div>
+            <div class="step"><span class="step-num">3</span><span class="step-text">Draft mode = not live on website. You need to either reshoot via the app or upload new images via console to reactivate it</span></div>
+            <div class="step"><span class="step-num">4</span><span class="step-text">If using Smart Match / VIN Cloning: Spyne checks if a previous match exists and can auto-apply old media to the re-entered VIN without reshoot</span></div>
+          </div>
+          <div class="video-row">
+            <span class="video-label">How-to video</span>
+            <div class="video-status"><span class="video-dot dot-pending"></span><span class="video-text">Pending</span></div>
+              <div class="qc-section">
+              <div class="qc-box">
+                <div class="qc-box-label">CS Review</div>
+                <div class="qc-row">
+                  <select class="qc-status-select" onchange="updateQCStatus(this,'what-happens-to-a-vin-when-it-cs')" id="qcs-what-happens-to-a-vin-when-it-cs">
+                    <option value="">In Review</option>
+                    <option value="approved">Approved</option>
+                    <option value="needs-fix">Needs Fix</option>
+                  </select>
+                </div>
+                <textarea class="qc-notes" placeholder="Add notes..." id="qcn-what-happens-to-a-vin-when-it-cs" onblur="saveNote(this,'what-happens-to-a-vin-when-it-cs')"></textarea>
+              </div>
+              </div>
+          </div>
+        </div>
+      </div>
+          <div class="uc-card" data-spyne="Sales OB" data-dealer="GM Marketing" data-usage="internal" data-tier="Lite" data-video="pending">
+        <div class="uc-card-head">
+          <div class="uc-title">How images reach CarGurus, AutoTrader, and other marketplaces</div>
+          <div class="uc-card-head-badges">
+            <span class="spyne-badge spyne-sales">Sales + OB</span>
+            <span class="usage-badge usage-internal">Internal Only</span>
+            <span class="uc-source src-calls">Calls</span>
+          </div>
+        </div>
+        <div class="uc-card-body">
+          <div class="steps">
+            <div class="steps-label">How it works</div>
+            <div class="step"><span class="step-num">1</span><span class="step-text"><strong>Images</strong>: Spyne sends to your IMS/DMS (vAuto, HomeNet, WinSolutions). Your IMS syndicates them to marketplaces as part of their normal feed</span></div>
+            <div class="step"><span class="step-num">2</span><span class="step-text"><strong>360 spin and video</strong>: Spyne sends a script directly to your website provider. These appear only on the VDP -- not on listing pages or marketplace thumbnails</span></div>
+            <div class="step"><span class="step-num">3</span><span class="step-text">Spyne does not currently send scripts directly to CarGurus or AutoTrader. Any marketplace visibility for 360/video depends on those platforms supporting embedded iframes (CarGurus integration is in progress)</span></div>
+            <div class="step"><span class="step-num">4</span><span class="step-text">For new cars without photos yet: VIN Cloning finds a match in existing inventory (same make/model/trim/color) and publishes instantly while the physical car is being photographed</span></div>
+          </div>
+          <div class="tip-row">This is a common confusion point in sales demos. Be precise: Spyne controls the VDP experience. Marketplace thumbnails are controlled by the IMS syndication, not Spyne directly.</div>
+          <div class="video-row">
+            <span class="video-label">How-to video</span>
+            <div class="video-status"><span class="video-dot dot-pending"></span><span class="video-text">Pending</span></div>
+              <div class="qc-section">
+              <div class="qc-box">
+                <div class="qc-box-label">Sales Review</div>
+                <div class="qc-row">
+                  <select class="qc-status-select" onchange="updateQCStatus(this,'how-images-reach-cargurus--aut-sales')" id="qcs-how-images-reach-cargurus--aut-sales">
+                    <option value="">In Review</option>
+                    <option value="approved">Approved</option>
+                    <option value="needs-fix">Needs Fix</option>
+                  </select>
+                </div>
+                <textarea class="qc-notes" placeholder="Add notes..." id="qcn-how-images-reach-cargurus--aut-sales" onblur="saveNote(this,'how-images-reach-cargurus--aut-sales')"></textarea>
+              </div>
+              <div class="qc-box">
+                <div class="qc-box-label">OB Review</div>
+                <div class="qc-row">
+                  <select class="qc-status-select" onchange="updateQCStatus(this,'how-images-reach-cargurus--aut-ob')" id="qcs-how-images-reach-cargurus--aut-ob">
+                    <option value="">In Review</option>
+                    <option value="approved">Approved</option>
+                    <option value="needs-fix">Needs Fix</option>
+                  </select>
+                </div>
+                <textarea class="qc-notes" placeholder="Add notes..." id="qcn-how-images-reach-cargurus--aut-ob" onblur="saveNote(this,'how-images-reach-cargurus--aut-ob')"></textarea>
+              </div>
+              </div>
+          </div>
+        </div>
+      </div>
+          <div class="uc-card" data-spyne="CS" data-dealer="Lot Marketing" data-usage="both" data-tier="Lite" data-video="pending">
+        <div class="uc-card-head">
+          <div class="uc-title">Download processed images from console manually</div>
+          <div class="uc-card-head-badges">
+            <span class="spyne-badge spyne-cs">CS</span>
+            <span class="usage-badge usage-both">Internal + External</span>
+            <span class="uc-source src-calls">Calls</span>
+          </div>
+        </div>
+        <div class="uc-card-body">
+          <div class="steps">
+            <div class="steps-label">How it works</div>
+            <div class="step"><span class="step-num">1</span><span class="step-text">Open the VIN in console. Go to <strong>Images</strong> section. You will see both input (raw) and processed images</span></div>
+            <div class="step"><span class="step-num">2</span><span class="step-text">Click the <strong>Download</strong> button at the top right. Choose <strong>Processed</strong> (default) or both raw and processed</span></div>
+            <div class="step"><span class="step-num">3</span><span class="step-text">Images download as a ZIP to your device. Upload to your marketplace or website manually from there</span></div>
+          </div>
+          <div class="tip-row">You can download immediately after AI processing is complete -- you do not have to wait for Assured status. Wait for Assured only if you want the manually QC-verified version.</div>
+          <div class="video-row">
+            <span class="video-label">How-to video</span>
+            <div class="video-status"><span class="video-dot dot-pending"></span><span class="video-text">Pending</span></div>
+              <div class="qc-section">
+              <div class="qc-box">
+                <div class="qc-box-label">CS Review</div>
+                <div class="qc-row">
+                  <select class="qc-status-select" onchange="updateQCStatus(this,'download-processed-images-from-cs')" id="qcs-download-processed-images-from-cs">
+                    <option value="">In Review</option>
+                    <option value="approved">Approved</option>
+                    <option value="needs-fix">Needs Fix</option>
+                  </select>
+                </div>
+                <textarea class="qc-notes" placeholder="Add notes..." id="qcn-download-processed-images-from-cs" onblur="saveNote(this,'download-processed-images-from-cs')"></textarea>
+              </div>
+              </div>
+          </div>
+        </div>
+      </div>
+          </div>
+        </div>
+      </div>
+      <div class="sub-section">
+        <div class="sub-section-head" onclick="toggleSub(this)">
+          <span class="sub-title">Users and Access</span>
+          <span class="sub-count">2 use cases</span>
+          <span class="sub-arrow">▾</span>
+        </div>
+        <div class="sub-section-body">
+          <div class="cards-grid">
+          <div class="uc-card" data-spyne="OB" data-dealer="GM Lot" data-usage="both" data-tier="Lite" data-video="pending">
+        <div class="uc-card-head">
+          <div class="uc-title">Set up multiple users and rooftops without sharing one login</div>
+          <div class="uc-card-head-badges">
+            <span class="spyne-badge spyne-ob">OB</span>
+            <span class="usage-badge usage-both">Internal + External</span>
+            <span class="uc-source src-calls">Calls</span>
+          </div>
+        </div>
+        <div class="uc-card-body">
+          <div class="steps">
+            <div class="steps-label">How it works</div>
+            <div class="step"><span class="step-num">1</span><span class="step-text">During OB, CSM creates a <strong>Team</strong> per rooftop in the console. Each team gets its own background, settings, and credentials</span></div>
+            <div class="step"><span class="step-num">2</span><span class="step-text">Individual users are added to the relevant team. Each logs in with their own email ID and password</span></div>
+            <div class="step"><span class="step-num">3</span><span class="step-text">When shooting, photographers select the correct team context before processing so images route to the right rooftop background</span></div>
+          </div>
+          <div class="tip-row">If a photographer shoots for multiple locations, they must switch team context in the app before each shoot. Skipping this sends all images to the wrong background.</div>
+          <div class="video-row">
+            <span class="video-label">How-to video</span>
+            <div class="video-status"><span class="video-dot dot-pending"></span><span class="video-text">Pending</span></div>
+              <div class="qc-section">
+              <div class="qc-box">
+                <div class="qc-box-label">OB Review</div>
+                <div class="qc-row">
+                  <select class="qc-status-select" onchange="updateQCStatus(this,'set-up-multiple-users-and-roof-ob')" id="qcs-set-up-multiple-users-and-roof-ob">
+                    <option value="">In Review</option>
+                    <option value="approved">Approved</option>
+                    <option value="needs-fix">Needs Fix</option>
+                  </select>
+                </div>
+                <textarea class="qc-notes" placeholder="Add notes..." id="qcn-set-up-multiple-users-and-roof-ob" onblur="saveNote(this,'set-up-multiple-users-and-roof-ob')"></textarea>
+              </div>
+              </div>
+          </div>
+        </div>
+      </div>
+          <div class="uc-card" data-spyne="OB" data-dealer="GM Marketing" data-usage="internal" data-tier="Lite" data-video="pending">
+        <div class="uc-card-head">
+          <div class="uc-title">Add a new user via console invite (admin vs member access)</div>
+          <div class="uc-card-head-badges">
+            <span class="spyne-badge spyne-ob">OB</span>
+            <span class="usage-badge usage-internal">Internal Only</span>
+            <span class="uc-source src-calls">Calls</span>
+          </div>
+        </div>
+        <div class="uc-card-body">
+          <div class="steps">
+            <div class="steps-label">How it works</div>
+            <div class="step"><span class="step-num">1</span><span class="step-text">Go to <strong>Console > More > Users</strong>. Click <strong>Invite Users</strong></span></div>
+            <div class="step"><span class="step-num">2</span><span class="step-text">Enter the email address of the new user. Send invite. They receive a link (check spam if not in inbox)</span></div>
+            <div class="step"><span class="step-num">3</span><span class="step-text">New user sets their password from the invite link and lands directly in your account</span></div>
+            <div class="step"><span class="step-num">4</span><span class="step-text"><strong>Admin</strong>: full access including settings, campaign creation, user management. <strong>Member</strong>: can shoot and upload only, cannot delete or change settings</span></div>
+            <div class="step"><span class="step-num">5</span><span class="step-text">For multi-rooftop: restrict members to specific teams so an inventory manager for Location A cannot see or touch Location B</span></div>
+          </div>
+          <div class="tip-row">Do not create a new account by clicking Sign Up. Existing users must click Existing User Login and use the credentials shared by your CSM. Clicking Sign Up creates a separate disconnected account.</div>
+          <div class="video-row">
+            <span class="video-label">How-to video</span>
+            <div class="video-status"><span class="video-dot dot-pending"></span><span class="video-text">Pending</span></div>
+              <div class="qc-section">
+              <div class="qc-box">
+                <div class="qc-box-label">OB Review</div>
+                <div class="qc-row">
+                  <select class="qc-status-select" onchange="updateQCStatus(this,'add-a-new-user-via-console-inv-ob')" id="qcs-add-a-new-user-via-console-inv-ob">
+                    <option value="">In Review</option>
+                    <option value="approved">Approved</option>
+                    <option value="needs-fix">Needs Fix</option>
+                  </select>
+                </div>
+                <textarea class="qc-notes" placeholder="Add notes..." id="qcn-add-a-new-user-via-console-inv-ob" onblur="saveNote(this,'add-a-new-user-via-console-inv-ob')"></textarea>
+              </div>
+              </div>
+          </div>
+        </div>
+      </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="mod-panel" id="mod-backgrounds">
+      <div class="mod-panel-head">
+        
+        <div>
+          <div class="mod-panel-title">Backgrounds and Branding</div>
+          <div class="mod-panel-sub">4 use cases across 2 sections</div>
+        </div>
+      </div>
+      <div class="sub-section">
+        <div class="sub-section-head" onclick="toggleSub(this)">
+          <span class="sub-title">Background Setup</span>
+          <span class="sub-count">2 use cases</span>
+          <span class="sub-arrow">▾</span>
+        </div>
+        <div class="sub-section-body">
+          <div class="cards-grid">
+          <div class="uc-card" data-spyne="OB CS" data-dealer="Lot Marketing" data-usage="both" data-tier="Lite" data-video="pending">
+        <div class="uc-card-head">
+          <div class="uc-title">Change or reprocess a car with a different background</div>
+          <div class="uc-card-head-badges">
+            <span class="spyne-badge spyne-ob-cs">OB + CS</span>
+            <span class="usage-badge usage-both">Internal + External</span>
+            <span class="uc-source src-calls">Calls</span>
+          </div>
+        </div>
+        <div class="uc-card-body">
+          <div class="steps">
+            <div class="steps-label">How it works</div>
+            <div class="step"><span class="step-num">1</span><span class="step-text">Go to <strong>Console &gt; Studio AI &gt; Active Inventory</strong>. Search by VIN or scroll to the vehicle</span></div>
+            <div class="step"><span class="step-num">2</span><span class="step-text">Click <strong>Edit in Virtual Studio</strong>. Left panel shows available backgrounds for your account</span></div>
+            <div class="step"><span class="step-num">3</span><span class="step-text">Select the new background. Click <strong>Transform Media</strong>. No reshoot needed</span></div>
+          </div>
+          <div class="tip-row">Do not use the background images themselves as a shortcut. Always go back to the VIN in inventory, copy it, paste into search, then edit in Virtual Studio. Editing from the image view causes rotation issues on reprocessing.</div>
+          <div class="video-row">
+            <span class="video-label">How-to video</span>
+            <div class="video-status"><span class="video-dot dot-pending"></span><span class="video-text">Pending</span></div>
+              <div class="qc-section">
+              <div class="qc-box">
+                <div class="qc-box-label">OB Review</div>
+                <div class="qc-row">
+                  <select class="qc-status-select" onchange="updateQCStatus(this,'change-or-reprocess-a-car-with-ob')" id="qcs-change-or-reprocess-a-car-with-ob">
+                    <option value="">In Review</option>
+                    <option value="approved">Approved</option>
+                    <option value="needs-fix">Needs Fix</option>
+                  </select>
+                </div>
+                <textarea class="qc-notes" placeholder="Add notes..." id="qcn-change-or-reprocess-a-car-with-ob" onblur="saveNote(this,'change-or-reprocess-a-car-with-ob')"></textarea>
+              </div>
+              <div class="qc-box">
+                <div class="qc-box-label">CS Review</div>
+                <div class="qc-row">
+                  <select class="qc-status-select" onchange="updateQCStatus(this,'change-or-reprocess-a-car-with-cs')" id="qcs-change-or-reprocess-a-car-with-cs">
+                    <option value="">In Review</option>
+                    <option value="approved">Approved</option>
+                    <option value="needs-fix">Needs Fix</option>
+                  </select>
+                </div>
+                <textarea class="qc-notes" placeholder="Add notes..." id="qcn-change-or-reprocess-a-car-with-cs" onblur="saveNote(this,'change-or-reprocess-a-car-with-cs')"></textarea>
+              </div>
+              </div>
+          </div>
+        </div>
+      </div>
+          <div class="uc-card" data-spyne="OB" data-dealer="Lot Marketing" data-usage="internal" data-tier="Lite" data-video="pending">
+        <div class="uc-card-head">
+          <div class="uc-title">Set up custom backgrounds from console (BGID workflow)</div>
+          <div class="uc-card-head-badges">
+            <span class="spyne-badge spyne-ob">OB</span>
+            <span class="usage-badge usage-internal">Internal Only</span>
+            <span class="uc-source src-calls">Calls</span>
+          </div>
+        </div>
+        <div class="uc-card-body">
+          <div class="steps">
+            <div class="steps-label">How it works</div>
+            <div class="step"><span class="step-num">1</span><span class="step-text">Go to <strong>Settings &gt; Studio</strong>. Select the rooftop you want to configure</span></div>
+            <div class="step"><span class="step-num">2</span><span class="step-text">Each background has a <strong>BGID (background ID)</strong> shown with a thumbnail. This is your reference ID</span></div>
+            <div class="step"><span class="step-num">3</span><span class="step-text">To request a change (different floor, wall color, turntable, logo), share the BGID with your CSM and describe the modification</span></div>
+            <div class="step"><span class="step-num">4</span><span class="step-text">For multi-rooftop setups: configure different BGIDs per location so each rooftop processes to its own branded background automatically</span></div>
+          </div>
+          <div class="video-row">
+            <span class="video-label">How-to video</span>
+            <div class="video-status"><span class="video-dot dot-pending"></span><span class="video-text">Pending</span></div>
+              <div class="qc-section">
+              <div class="qc-box">
+                <div class="qc-box-label">OB Review</div>
+                <div class="qc-row">
+                  <select class="qc-status-select" onchange="updateQCStatus(this,'set-up-custom-backgrounds-from-ob')" id="qcs-set-up-custom-backgrounds-from-ob">
+                    <option value="">In Review</option>
+                    <option value="approved">Approved</option>
+                    <option value="needs-fix">Needs Fix</option>
+                  </select>
+                </div>
+                <textarea class="qc-notes" placeholder="Add notes..." id="qcn-set-up-custom-backgrounds-from-ob" onblur="saveNote(this,'set-up-custom-backgrounds-from-ob')"></textarea>
+              </div>
+              </div>
+          </div>
+        </div>
+      </div>
+          </div>
+        </div>
+      </div>
+      <div class="sub-section">
+        <div class="sub-section-head" onclick="toggleSub(this)">
+          <span class="sub-title">Logo and Plate Branding</span>
+          <span class="sub-count">2 use cases</span>
+          <span class="sub-arrow">▾</span>
+        </div>
+        <div class="sub-section-body">
+          <div class="cards-grid">
+          <div class="uc-card" data-spyne="OB" data-dealer="Marketing" data-usage="external" data-tier="Lite" data-video="pending">
+        <div class="uc-card-head">
+          <div class="uc-title">Set up number plate masking and logo on plate</div>
+          <div class="uc-card-head-badges">
+            <span class="spyne-badge spyne-ob">OB</span>
+            <span class="usage-badge usage-external">External / Client</span>
+            <span class="uc-source src-calls">Calls</span>
+          </div>
+        </div>
+        <div class="uc-card-body">
+          <div class="steps">
+            <div class="steps-label">How it works</div>
+            <div class="step"><span class="step-num">1</span><span class="step-text">In <strong>Edit in Virtual Studio</strong>, find the <strong>Number Plate Masking</strong> toggle in the left panel</span></div>
+            <div class="step"><span class="step-num">2</span><span class="step-text">To add a logo on the plate: send a small PNG of the dealership logo to your CSM. It is mapped once at account level</span></div>
+            <div class="step"><span class="step-num">3</span><span class="step-text">All vehicles processed through this account will automatically have the logo placed on the number plate area going forward</span></div>
+          </div>
+          <div class="tip-row">Only applies to vehicles where a plate area is detected. Plateless or covered plates may not render the logo.</div>
+          <div class="video-row">
+            <span class="video-label">How-to video</span>
+            <div class="video-status"><span class="video-dot dot-pending"></span><span class="video-text">Pending</span></div>
+              <div class="qc-section">
+              <div class="qc-box">
+                <div class="qc-box-label">OB Review</div>
+                <div class="qc-row">
+                  <select class="qc-status-select" onchange="updateQCStatus(this,'set-up-number-plate-masking-an-ob')" id="qcs-set-up-number-plate-masking-an-ob">
+                    <option value="">In Review</option>
+                    <option value="approved">Approved</option>
+                    <option value="needs-fix">Needs Fix</option>
+                  </select>
+                </div>
+                <textarea class="qc-notes" placeholder="Add notes..." id="qcn-set-up-number-plate-masking-an-ob" onblur="saveNote(this,'set-up-number-plate-masking-an-ob')"></textarea>
+              </div>
+              </div>
+          </div>
+        </div>
+      </div>
+          <div class="uc-card" data-spyne="OB CS" data-dealer="Marketing GM" data-usage="external" data-tier="Lite" data-video="pending">
+        <div class="uc-card-head">
+          <div class="uc-title">Smart View Media Player: what it is and how to verify it is live on VDP</div>
+          <div class="uc-card-head-badges">
+            <span class="spyne-badge spyne-ob-cs">OB + CS</span>
+            <span class="usage-badge usage-external">External / Client</span>
+            <span class="uc-source src-both">Both</span>
+          </div>
+        </div>
+        <div class="uc-card-body">
+          <div class="steps">
+            <div class="steps-label">How it works</div>
+            <div class="step"><span class="step-num">1</span><span class="step-text">Smart View is an embedded media player widget that sits on the dealer's VDP. It hosts all Spyne output: images, 360 spin, video</span></div>
+            <div class="step"><span class="step-num">2</span><span class="step-text">To verify it is live: visit any active VDP on the dealer's website. Look for the Spyne player loading the processed images</span></div>
+            <div class="step"><span class="step-num">3</span><span class="step-text">If not showing: confirm DMS/IMS integration is active and the script is installed on the website. Raise to CSM if script is missing</span></div>
+          </div>
+          <div class="video-row">
+            <span class="video-label">How-to video</span>
+            <div class="video-status"><span class="video-dot dot-pending"></span><span class="video-text">Pending</span></div>
+              <div class="qc-section">
+              <div class="qc-box">
+                <div class="qc-box-label">OB Review</div>
+                <div class="qc-row">
+                  <select class="qc-status-select" onchange="updateQCStatus(this,'smart-view-media-player--what-ob')" id="qcs-smart-view-media-player--what-ob">
+                    <option value="">In Review</option>
+                    <option value="approved">Approved</option>
+                    <option value="needs-fix">Needs Fix</option>
+                  </select>
+                </div>
+                <textarea class="qc-notes" placeholder="Add notes..." id="qcn-smart-view-media-player--what-ob" onblur="saveNote(this,'smart-view-media-player--what-ob')"></textarea>
+              </div>
+              <div class="qc-box">
+                <div class="qc-box-label">CS Review</div>
+                <div class="qc-row">
+                  <select class="qc-status-select" onchange="updateQCStatus(this,'smart-view-media-player--what-cs')" id="qcs-smart-view-media-player--what-cs">
+                    <option value="">In Review</option>
+                    <option value="approved">Approved</option>
+                    <option value="needs-fix">Needs Fix</option>
+                  </select>
+                </div>
+                <textarea class="qc-notes" placeholder="Add notes..." id="qcn-smart-view-media-player--what-cs" onblur="saveNote(this,'smart-view-media-player--what-cs')"></textarea>
+              </div>
+              </div>
+          </div>
+        </div>
+      </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="mod-panel" id="mod-smart-campaigns">
+      <div class="mod-panel-head">
+        
+        <div>
+          <div class="mod-panel-title">Smart Campaigns</div>
+          <div class="mod-panel-sub">2 use cases across 2 sections</div>
+        </div>
+      </div>
+      <div class="sub-section">
+        <div class="sub-section-head" onclick="toggleSub(this)">
+          <span class="sub-title">Configuring Creatives</span>
+          <span class="sub-count">1 use case</span>
+          <span class="sub-arrow">▾</span>
+        </div>
+        <div class="sub-section-body">
+          <div class="cards-grid">
+          <div class="uc-card" data-spyne="OB CS" data-dealer="Marketing GM" data-usage="both" data-tier="Lite" data-video="pending">
+        <div class="uc-card-head">
+          <div class="uc-title">Configure Smart Campaign creatives (overlays, billboards, dynamic text)</div>
+          <div class="uc-card-head-badges">
+            <span class="spyne-badge spyne-ob-cs">OB + CS</span>
+            <span class="usage-badge usage-both">Internal + External</span>
+            <span class="uc-source src-calls">Calls</span>
+          </div>
+        </div>
+        <div class="uc-card-body">
+          <div class="steps">
+            <div class="steps-label">How it works</div>
+            <div class="step"><span class="step-num">1</span><span class="step-text">Go to <strong>Settings &gt; Studio &gt; Media Kit</strong>. Select the rooftop first. Toggle <strong>on</strong> to enable Smart Campaigns (off by default)</span></div>
+            <div class="step"><span class="step-num">2</span><span class="step-text"><strong>Promotional Overlay</strong>: upload a static image from your design team (e.g. a sale banner). Applied on top of vehicle images</span></div>
+            <div class="step"><span class="step-num">3</span><span class="step-text"><strong>Promotional Billboard</strong>: upload a static image inserted between vehicle images (e.g. dealer branding slide)</span></div>
+            <div class="step"><span class="step-num">4</span><span class="step-text"><strong>Dynamic Text Overlay</strong>: create directly in platform. Add a name, content, then use chips (year, make, model, price, odometer) to auto-fill per VIN. Write the chip name inside curly brackets if typing manually</span></div>
+          </div>
+          <div class="tip-row">Overlays and billboards can be static (uploaded from design team). Only dynamic text overlays must be created inside the platform.</div>
+          <div class="video-row">
+            <span class="video-label">How-to video</span>
+            <div class="video-status"><span class="video-dot dot-pending"></span><span class="video-text">Pending</span></div>
+              <div class="qc-section">
+              <div class="qc-box">
+                <div class="qc-box-label">OB Review</div>
+                <div class="qc-row">
+                  <select class="qc-status-select" onchange="updateQCStatus(this,'configure-smart-campaign-creat-ob')" id="qcs-configure-smart-campaign-creat-ob">
+                    <option value="">In Review</option>
+                    <option value="approved">Approved</option>
+                    <option value="needs-fix">Needs Fix</option>
+                  </select>
+                </div>
+                <textarea class="qc-notes" placeholder="Add notes..." id="qcn-configure-smart-campaign-creat-ob" onblur="saveNote(this,'configure-smart-campaign-creat-ob')"></textarea>
+              </div>
+              <div class="qc-box">
+                <div class="qc-box-label">CS Review</div>
+                <div class="qc-row">
+                  <select class="qc-status-select" onchange="updateQCStatus(this,'configure-smart-campaign-creat-cs')" id="qcs-configure-smart-campaign-creat-cs">
+                    <option value="">In Review</option>
+                    <option value="approved">Approved</option>
+                    <option value="needs-fix">Needs Fix</option>
+                  </select>
+                </div>
+                <textarea class="qc-notes" placeholder="Add notes..." id="qcn-configure-smart-campaign-creat-cs" onblur="saveNote(this,'configure-smart-campaign-creat-cs')"></textarea>
+              </div>
+              </div>
+          </div>
+        </div>
+      </div>
+          </div>
+        </div>
+      </div>
+      <div class="sub-section">
+        <div class="sub-section-head" onclick="toggleSub(this)">
+          <span class="sub-title">Running a Campaign</span>
+          <span class="sub-count">1 use case</span>
+          <span class="sub-arrow">▾</span>
+        </div>
+        <div class="sub-section-body">
+          <div class="cards-grid">
+          <div class="uc-card" data-spyne="CS" data-dealer="Marketing GM" data-usage="both" data-tier="Lite" data-video="pending">
+        <div class="uc-card-head">
+          <div class="uc-title">Create and publish a Smart Campaign with inventory rules</div>
+          <div class="uc-card-head-badges">
+            <span class="spyne-badge spyne-cs">CS</span>
+            <span class="usage-badge usage-both">Internal + External</span>
+            <span class="uc-source src-calls">Calls</span>
+          </div>
+        </div>
+        <div class="uc-card-body">
+          <div class="steps">
+            <div class="steps-label">How it works</div>
+            <div class="step"><span class="step-num">1</span><span class="step-text">Go to <strong>Studio AI &gt; Smart Campaigns</strong>. Click <strong>Create Campaign</strong>. Select the team/rooftop</span></div>
+            <div class="step"><span class="step-num">2</span><span class="step-text">Set inventory rules: new vs pre-owned, odometer range, stock number prefix/suffix, certified status, year/make/model</span></div>
+            <div class="step"><span class="step-num">3</span><span class="step-text">Design step: select which creatives to apply. Choose position (first image, after first image, all images, last image)</span></div>
+            <div class="step"><span class="step-num">4</span><span class="step-text">Set campaign duration: specific end date or <strong>Never Ending</strong>. Review preview. Hit <strong>Publish</strong></span></div>
+            <div class="step"><span class="step-num">5</span><span class="step-text">All VINs matching the rules automatically get creatives applied. Pause or delete from campaign manager anytime</span></div>
+          </div>
+          <div class="video-row">
+            <span class="video-label">How-to video</span>
+            <div class="video-status"><span class="video-dot dot-pending"></span><span class="video-text">Pending</span></div>
+              <div class="qc-section">
+              <div class="qc-box">
+                <div class="qc-box-label">CS Review</div>
+                <div class="qc-row">
+                  <select class="qc-status-select" onchange="updateQCStatus(this,'create-and-publish-a-smart-cam-cs')" id="qcs-create-and-publish-a-smart-cam-cs">
+                    <option value="">In Review</option>
+                    <option value="approved">Approved</option>
+                    <option value="needs-fix">Needs Fix</option>
+                  </select>
+                </div>
+                <textarea class="qc-notes" placeholder="Add notes..." id="qcn-create-and-publish-a-smart-cam-cs" onblur="saveNote(this,'create-and-publish-a-smart-cam-cs')"></textarea>
+              </div>
+              </div>
+          </div>
+        </div>
+      </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="mod-panel" id="mod-smart-view">
+      <div class="mod-panel-head">
+        
+        <div>
+          <div class="mod-panel-title">Smart View</div>
+          <div class="mod-panel-sub">1 use cases across 1 sections</div>
+        </div>
+      </div>
+      <div class="sub-section">
+        <div class="sub-section-head" onclick="toggleSub(this)">
+          <span class="sub-title">VDP and Website Player</span>
+          <span class="sub-count">1 use case</span>
+          <span class="sub-arrow">▾</span>
+        </div>
+        <div class="sub-section-body">
+          <div class="cards-grid">
+          <div class="uc-card" data-spyne="OB" data-dealer="Marketing" data-usage="external" data-tier="Lite" data-video="pending">
+        <div class="uc-card-head">
+          <div class="uc-title">Generate Window Stickers automatically from VIN</div>
+          <div class="uc-card-head-badges">
+            <span class="spyne-badge spyne-ob">OB</span>
+            <span class="usage-badge usage-external">External / Client</span>
+            <span class="uc-source src-website">Website</span>
+          </div>
+        </div>
+        <div class="uc-card-body">
+          <div class="steps">
+            <div class="steps-label">How it works</div>
+            <div class="step"><span class="step-num">1</span><span class="step-text">Once a VIN is processed, Studio AI pulls vehicle specs via VIN decode and auto-generates a window sticker</span></div>
+            <div class="step"><span class="step-num">2</span><span class="step-text">Sticker appears in the VIN's output alongside processed images. Can be downloaded or published with the listing</span></div>
+            <div class="step"><span class="step-num">3</span><span class="step-text">No manual data entry needed. VIN data auto-populates make, model, trim, features, and price</span></div>
+          </div>
+          <div class="video-row">
+            <span class="video-label">How-to video</span>
+            <div class="video-status"><span class="video-dot dot-pending"></span><span class="video-text">Pending</span></div>
+              <div class="qc-section">
+              <div class="qc-box">
+                <div class="qc-box-label">OB Review</div>
+                <div class="qc-row">
+                  <select class="qc-status-select" onchange="updateQCStatus(this,'generate-window-stickers-autom-ob')" id="qcs-generate-window-stickers-autom-ob">
+                    <option value="">In Review</option>
+                    <option value="approved">Approved</option>
+                    <option value="needs-fix">Needs Fix</option>
+                  </select>
+                </div>
+                <textarea class="qc-notes" placeholder="Add notes..." id="qcn-generate-window-stickers-autom-ob" onblur="saveNote(this,'generate-window-stickers-autom-ob')"></textarea>
+              </div>
+              </div>
+          </div>
+        </div>
+      </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="mod-panel" id="mod-car-tours">
+      <div class="mod-panel-head">
+        
+        <div>
+          <div class="mod-panel-title">Car Tours / 360</div>
+          <div class="mod-panel-sub">3 use cases across 3 sections</div>
+        </div>
+      </div>
+      <div class="sub-section">
+        <div class="sub-section-head" onclick="toggleSub(this)">
+          <span class="sub-title">Exterior 360</span>
+          <span class="sub-count">1 use case</span>
+          <span class="sub-arrow">▾</span>
+        </div>
+        <div class="sub-section-body">
+          <div class="cards-grid">
+          <div class="uc-card" data-spyne="OB" data-dealer="Lot" data-usage="both" data-tier="Pro" data-video="pending">
+        <div class="uc-card-head">
+          <div class="uc-title">Capture a 360 spin using phone video (no Ricoh Theta)</div>
+          <div class="uc-card-head-badges">
+            <span class="spyne-badge spyne-ob">OB</span>
+            <span class="usage-badge usage-both">Internal + External</span>
+            <span class="uc-source src-calls">Calls</span>
+          </div>
+        </div>
+        <div class="uc-card-body">
+          <div class="steps">
+            <div class="steps-label">How it works</div>
+            <div class="step"><span class="step-num">1</span><span class="step-text">In app, after selecting VIN and vehicle type, choose the <strong>360 Walk Around</strong> option</span></div>
+            <div class="step"><span class="step-num">2</span><span class="step-text">Green border on screen = phone is upright and correctly angled. Keep it green throughout the walk</span></div>
+            <div class="step"><span class="step-num">3</span><span class="step-text">Walk one full circle around the car in <strong>30 to 90 seconds</strong>. Steady pace, do not jog. Car must stay fully in frame</span></div>
+            <div class="step"><span class="step-num">4</span><span class="step-text">App shows a preview after recording. If the bonnet or boot was cropped in any frame, reshoot now. If clean, tap <strong>Confirm</strong></span></div>
+            <div class="step"><span class="step-num">5</span><span class="step-text">Spyne AI converts the video into a smooth 360 spin with studio background applied</span></div>
+          </div>
+          <div class="tip-row">Nothing should pass between the phone camera and the car during the walk. Avoid other cars, people, or objects entering the frame.</div>
+          <div class="video-row">
+            <span class="video-label">How-to video</span>
+            <div class="video-status"><span class="video-dot dot-pending"></span><span class="video-text">Pending</span></div>
+              <div class="qc-section">
+              <div class="qc-box">
+                <div class="qc-box-label">OB Review</div>
+                <div class="qc-row">
+                  <select class="qc-status-select" onchange="updateQCStatus(this,'capture-a-360-spin-using-phone-ob')" id="qcs-capture-a-360-spin-using-phone-ob">
+                    <option value="">In Review</option>
+                    <option value="approved">Approved</option>
+                    <option value="needs-fix">Needs Fix</option>
+                  </select>
+                </div>
+                <textarea class="qc-notes" placeholder="Add notes..." id="qcn-capture-a-360-spin-using-phone-ob" onblur="saveNote(this,'capture-a-360-spin-using-phone-ob')"></textarea>
+              </div>
+              </div>
+          </div>
+        </div>
+      </div>
+          </div>
+        </div>
+      </div>
+      <div class="sub-section">
+        <div class="sub-section-head" onclick="toggleSub(this)">
+          <span class="sub-title">Interior 360 (Ricoh Theta)</span>
+          <span class="sub-count">1 use case</span>
+          <span class="sub-arrow">▾</span>
+        </div>
+        <div class="sub-section-body">
+          <div class="cards-grid">
+          <div class="uc-card" data-spyne="OB" data-dealer="Lot" data-usage="both" data-tier="Pro" data-video="pending">
+        <div class="uc-card-head">
+          <div class="uc-title">Capture interior 360 using Ricoh Theta</div>
+          <div class="uc-card-head-badges">
+            <span class="spyne-badge spyne-ob">OB</span>
+            <span class="usage-badge usage-both">Internal + External</span>
+            <span class="uc-source src-calls">Calls</span>
+          </div>
+        </div>
+        <div class="uc-card-body">
+          <div class="steps">
+            <div class="steps-label">How it works</div>
+            <div class="step"><span class="step-num">1</span><span class="step-text">In the app, when prompted for interior 360: scan the <strong>2D QR code on the bottom of the Ricoh Theta device</strong> to connect</span></div>
+            <div class="step"><span class="step-num">2</span><span class="step-text">Click <strong>Register</strong> to pair the device with the app</span></div>
+            <div class="step"><span class="step-num">3</span><span class="step-text">Place the Ricoh Theta on the <strong>centre armrest</strong> of the car. Tap capture</span></div>
+            <div class="step"><span class="step-num">4</span><span class="step-text">App processes the interior 360. Combine with exterior 360 for full Car Tour output</span></div>
+          </div>
+          <div class="tip-row">If Ricoh Theta is unavailable, interior 360 cannot be captured. Confirm device availability before scheduling a shoot batch.</div>
+          <div class="video-row">
+            <span class="video-label">How-to video</span>
+            <div class="video-status"><span class="video-dot dot-pending"></span><span class="video-text">Pending</span></div>
+              <div class="qc-section">
+              <div class="qc-box">
+                <div class="qc-box-label">OB Review</div>
+                <div class="qc-row">
+                  <select class="qc-status-select" onchange="updateQCStatus(this,'capture-interior-360-using-ric-ob')" id="qcs-capture-interior-360-using-ric-ob">
+                    <option value="">In Review</option>
+                    <option value="approved">Approved</option>
+                    <option value="needs-fix">Needs Fix</option>
+                  </select>
+                </div>
+                <textarea class="qc-notes" placeholder="Add notes..." id="qcn-capture-interior-360-using-ric-ob" onblur="saveNote(this,'capture-interior-360-using-ric-ob')"></textarea>
+              </div>
+              </div>
+          </div>
+        </div>
+      </div>
+          </div>
+        </div>
+      </div>
+      <div class="sub-section">
+        <div class="sub-section-head" onclick="toggleSub(this)">
+          <span class="sub-title">Video Tour</span>
+          <span class="sub-count">1 use case</span>
+          <span class="sub-arrow">▾</span>
+        </div>
+        <div class="sub-section-body">
+          <div class="cards-grid">
+          <div class="uc-card" data-spyne="CS" data-dealer="Marketing GM" data-usage="external" data-tier="Pro" data-video="pending">
+        <div class="uc-card-head">
+          <div class="uc-title">Generate a Video Tour with voice narration</div>
+          <div class="uc-card-head-badges">
+            <span class="spyne-badge spyne-cs">CS</span>
+            <span class="usage-badge usage-external">External / Client</span>
+            <span class="uc-source src-website">Website</span>
+          </div>
+        </div>
+        <div class="uc-card-body">
+          <div class="steps">
+            <div class="steps-label">How it works</div>
+            <div class="step"><span class="step-num">1</span><span class="step-text">After a VIN is processed with images and 360, select <strong>Video Tour</strong> as an additional product during processing</span></div>
+            <div class="step"><span class="step-num">2</span><span class="step-text">Choose a video template. Multiple templates available including website-optimised formats</span></div>
+            <div class="step"><span class="step-num">3</span><span class="step-text">AI generates professional voice narration automatically from VIN specs. No recording needed</span></div>
+            <div class="step"><span class="step-num">4</span><span class="step-text">Output video can be published to dealer website, IMS, or social media directly from console</span></div>
+          </div>
+          <div class="video-row">
+            <span class="video-label">How-to video</span>
+            <div class="video-status"><span class="video-dot dot-pending"></span><span class="video-text">Pending</span></div>
+              <div class="qc-section">
+              <div class="qc-box">
+                <div class="qc-box-label">CS Review</div>
+                <div class="qc-row">
+                  <select class="qc-status-select" onchange="updateQCStatus(this,'generate-a-video-tour-with-voi-cs')" id="qcs-generate-a-video-tour-with-voi-cs">
+                    <option value="">In Review</option>
+                    <option value="approved">Approved</option>
+                    <option value="needs-fix">Needs Fix</option>
+                  </select>
+                </div>
+                <textarea class="qc-notes" placeholder="Add notes..." id="qcn-generate-a-video-tour-with-voi-cs" onblur="saveNote(this,'generate-a-video-tour-with-voi-cs')"></textarea>
+              </div>
+              </div>
+          </div>
+        </div>
+      </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="mod-panel" id="mod-pro-features">
+      <div class="mod-panel-head">
+        
+        <div>
+          <div class="mod-panel-title">Pro Features</div>
+          <div class="mod-panel-sub">3 use cases across 3 sections</div>
+        </div>
+      </div>
+      <div class="sub-section">
+        <div class="sub-section-head" onclick="toggleSub(this)">
+          <span class="sub-title">AI Descriptions</span>
+          <span class="sub-count">1 use case</span>
+          <span class="sub-arrow">▾</span>
+        </div>
+        <div class="sub-section-body">
+          <div class="cards-grid">
+          <div class="uc-card" data-spyne="CS" data-dealer="Marketing" data-usage="external" data-tier="Pro" data-video="pending">
+        <div class="uc-card-head">
+          <div class="uc-title">AI-generated vehicle descriptions for VDP listings</div>
+          <div class="uc-card-head-badges">
+            <span class="spyne-badge spyne-cs">CS</span>
+            <span class="usage-badge usage-external">External / Client</span>
+            <span class="uc-source src-website">Website</span>
+          </div>
+        </div>
+        <div class="uc-card-body">
+          <div class="steps">
+            <div class="steps-label">How it works</div>
+            <div class="step"><span class="step-num">1</span><span class="step-text">Available on Pro tier. After VIN processing, Spyne auto-generates a vehicle description from VIN-decoded specs</span></div>
+            <div class="step"><span class="step-num">2</span><span class="step-text">Description is consistent in tone across all inventory. No manual copywriting by marketing team required</span></div>
+            <div class="step"><span class="step-num">3</span><span class="step-text">Published alongside images and media to dealer website via the existing DMS/IMS integration</span></div>
+          </div>
+          <div class="video-row">
+            <span class="video-label">How-to video</span>
+            <div class="video-status"><span class="video-dot dot-pending"></span><span class="video-text">Pending</span></div>
+              <div class="qc-section">
+              <div class="qc-box">
+                <div class="qc-box-label">CS Review</div>
+                <div class="qc-row">
+                  <select class="qc-status-select" onchange="updateQCStatus(this,'ai-generated-vehicle-descripti-cs')" id="qcs-ai-generated-vehicle-descripti-cs">
+                    <option value="">In Review</option>
+                    <option value="approved">Approved</option>
+                    <option value="needs-fix">Needs Fix</option>
+                  </select>
+                </div>
+                <textarea class="qc-notes" placeholder="Add notes..." id="qcn-ai-generated-vehicle-descripti-cs" onblur="saveNote(this,'ai-generated-vehicle-descripti-cs')"></textarea>
+              </div>
+              </div>
+          </div>
+        </div>
+      </div>
+          </div>
+        </div>
+      </div>
+      <div class="sub-section">
+        <div class="sub-section-head" onclick="toggleSub(this)">
+          <span class="sub-title">Smart Match and VIN Clone</span>
+          <span class="sub-count">1 use case</span>
+          <span class="sub-arrow">▾</span>
+        </div>
+        <div class="sub-section-body">
+          <div class="cards-grid">
+          <div class="uc-card" data-spyne="CS" data-dealer="Lot" data-usage="internal" data-tier="Lite" data-video="pending">
+        <div class="uc-card-head">
+          <div class="uc-title">Smart Match: skip reshoot for a VIN already in the system</div>
+          <div class="uc-card-head-badges">
+            <span class="spyne-badge spyne-cs">CS</span>
+            <span class="usage-badge usage-internal">Internal Only</span>
+            <span class="uc-source src-website">Website</span>
+          </div>
+        </div>
+        <div class="uc-card-body">
+          <div class="steps">
+            <div class="steps-label">How it works</div>
+            <div class="step"><span class="step-num">1</span><span class="step-text">A vehicle re-enters inventory that was previously processed (same VIN)</span></div>
+            <div class="step"><span class="step-num">2</span><span class="step-text">Spyne detects the VIN match and maps the previous processed media automatically to the new stock entry</span></div>
+            <div class="step"><span class="step-num">3</span><span class="step-text">No reshoot, no upload. Listing goes live with the existing studio images</span></div>
+          </div>
+          <div class="tip-row">Applies only if the vehicle condition and specs have not changed. CSM can verify if matching is active on your account.</div>
+          <div class="video-row">
+            <span class="video-label">How-to video</span>
+            <div class="video-status"><span class="video-dot dot-pending"></span><span class="video-text">Pending</span></div>
+              <div class="qc-section">
+              <div class="qc-box">
+                <div class="qc-box-label">CS Review</div>
+                <div class="qc-row">
+                  <select class="qc-status-select" onchange="updateQCStatus(this,'smart-match--skip-reshoot-for-cs')" id="qcs-smart-match--skip-reshoot-for-cs">
+                    <option value="">In Review</option>
+                    <option value="approved">Approved</option>
+                    <option value="needs-fix">Needs Fix</option>
+                  </select>
+                </div>
+                <textarea class="qc-notes" placeholder="Add notes..." id="qcn-smart-match--skip-reshoot-for-cs" onblur="saveNote(this,'smart-match--skip-reshoot-for-cs')"></textarea>
+              </div>
+              </div>
+          </div>
+        </div>
+      </div>
+          </div>
+        </div>
+      </div>
+      <div class="sub-section">
+        <div class="sub-section-head" onclick="toggleSub(this)">
+          <span class="sub-title">Window Stickers</span>
+          <span class="sub-count">1 use case</span>
+          <span class="sub-arrow">▾</span>
+        </div>
+        <div class="sub-section-body">
+          <div class="cards-grid">
+          
+      </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="mod-panel" id="mod-account-setup">
+      <div class="mod-panel-head">
+        <div>
+          <div class="mod-panel-title">Account Setup and Configuration</div>
+          <div class="mod-panel-sub">6 use cases across 2 sections</div>
+        </div>
+      </div>
+      <div class="sub-section">
+        <div class="sub-section-head" onclick="toggleSub(this)">
+          <span class="sub-title">Onboarding Setup Flow</span>
+          <span class="sub-count">4 use cases</span>
+          <span class="sub-arrow">▾</span>
+        </div>
+        <div class="sub-section-body">
+          <div class="cards-grid">
+<div class="uc-card" data-spyne="OB" data-dealer="GM Marketing" data-usage="internal" data-tier="Lite" data-video="pending">
+            <div class="uc-card-head">
+              <div class="uc-title">Post-call welcome email: what OB sends and what inputs are needed from dealer</div>
+              <div class="uc-card-head-badges">
+                <span class="spyne-badge spyne-ob">OB</span>
+                <span class="usage-badge usage-internal">Internal Only</span>
+                <span class="uc-source src-calls">Calls</span>
+              </div>
+            </div>
+            <div class="uc-card-body">
+              <div class="steps">
+                <div class="steps-label">How it works</div>
+                <div class="step"><span class="step-num">1</span><span class="step-text">Immediately after the first OB call, send the welcome email. It must include: background catalog link, logo upload instructions, IMS/DMS integration email thread invite</span></div>
+                <div class="step"><span class="step-num">2</span><span class="step-text"><strong>From dealer</strong>: background design ID (5-digit code from catalog), high-resolution PNG logo, IMS/DMS provider name and login access</span></div>
+                <div class="step"><span class="step-num">3</span><span class="step-text"><strong>From Spyne</strong>: two separate integration emails sent to IMS -- one for import setup, one for export setup. Both require dealer approval before going live</span></div>
+                <div class="step"><span class="step-num">4</span><span class="step-text">Once background ID and logo received, creative team creates 3-5 background samples with logo placed. Share samples to dealer for approval before making live</span></div>
+                <div class="step"><span class="step-num">5</span><span class="step-text">Only after sample approval: background made live on console, credentials created, training session scheduled</span></div>
+              </div>
+              <div class="tip-row">Never start processing existing inventory before background approval is confirmed. Images processed on the wrong background need to be reprocessed entirely.</div>
+              <div class="video-row">
+                <span class="video-label">How-to video</span>
+                <div class="video-status"><span class="video-dot dot-pending"></span><span class="video-text">Pending</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="uc-card" data-spyne="OB" data-dealer="GM" data-usage="internal" data-tier="Lite" data-video="pending">
+            <div class="uc-card-head">
+              <div class="uc-title">IMS and DMS integration: what access Spyne needs and how to collect it</div>
+              <div class="uc-card-head-badges">
+                <span class="spyne-badge spyne-ob">OB</span>
+                <span class="usage-badge usage-internal">Internal Only</span>
+                <span class="uc-source src-calls">Calls</span>
+              </div>
+            </div>
+            <div class="uc-card-body">
+              <div class="steps">
+                <div class="steps-label">How it works</div>
+                <div class="step"><span class="step-num">1</span><span class="step-text">Spyne integrates with IMS (vAuto, HomeNet, WinSolutions, DealerCenter, Dealer Socket, Pivoto) for image import and export. Confirm the dealer's IMS on the first call</span></div>
+                <div class="step"><span class="step-num">2</span><span class="step-text">Access needed: add Spyne's cataloging email as a <strong>limited user</strong> on the IMS dashboard. Spyne does not need admin rights -- upload and download only</span></div>
+                <div class="step"><span class="step-num">3</span><span class="step-text">For DMS (CDK, Dealertrack, Reynolds and Reynolds): confirm if dealer uses it for images or just finance/service. Most dealers route images only through IMS</span></div>
+                <div class="step"><span class="step-num">4</span><span class="step-text">Send the integration form email post-call. Dealer fills in IMS name, dealer ID, and approves the integration email thread. Timeline: integration setup takes 5-10 business days</span></div>
+                <div class="step"><span class="step-num">5</span><span class="step-text">If dealer uses FTP: separate FTP credentials needed. Spyne engineering sets up the automated pull directly</span></div>
+              </div>
+              <div class="tip-row">If dealer has existing banners or overlays applied in their IMS before sending to Spyne, ask them to turn those off on the export feed. Overlays on raw images cause processing issues and inconsistent output.</div>
+              <div class="video-row">
+                <span class="video-label">How-to video</span>
+                <div class="video-status"><span class="video-dot dot-pending"></span><span class="video-text">Pending</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="uc-card" data-spyne="OB" data-dealer="Lot" data-usage="internal" data-tier="Lite" data-video="pending">
+            <div class="uc-card-head">
+              <div class="uc-title">
+          </div>
+        </div>
+      </div>
+      <div class="sub-section">
+        <div class="sub-section-head" onclick="toggleSub(this)">
+          <span class="sub-title">App and Console Configuration</span>
+          <span class="sub-count">2 use cases</span>
+          <span class="sub-arrow">▾</span>
+        </div>
+        <div class="sub-section-body">
+          <div class="cards-grid">
+Configure app overlay sequence: exterior and interior shot slots per rooftop</div>
+              <div class="uc-card-head-badges">
+                <span class="spyne-badge spyne-ob">OB</span>
+                <span class="usage-badge usage-internal">Internal Only</span>
+                <span class="uc-source src-calls">Calls</span>
+              </div>
+            </div>
+            <div class="uc-card-body">
+              <div class="steps">
+                <div class="steps-label">How it works</div>
+                <div class="step"><span class="step-num">1</span><span class="step-text">Go to <strong>Console > Settings > Studio > App</strong>. Select the rooftop. You see the current exterior overlay sequence configured for that team</span></div>
+                <div class="step"><span class="step-num">2</span><span class="step-text"><strong>Exterior</strong>: choose 5, 8, or 12 image standard sequences. Or select Custom to manually pick and order specific angle overlays. Check/uncheck boxes to enable or disable individual shots</span></div>
+                <div class="step"><span class="step-num">3</span><span class="step-text"><strong>Interior</strong>: choose from 100+ interior overlay templates (dashboard full, steering wheel, odometer, door controls, back seat, trunk). Select only the ones the dealer wants. Mark as mandatory if the app should not advance until that shot is taken</span></div>
+                <div class="step"><span class="step-num">4</span><span class="step-text">Enable <strong>Custom template</strong> for both exterior and interior -- allows photographer to take freeform images without an overlay when needed (useful for truck beds, sunroofs, special features)</span></div>
+                <div class="step"><span class="step-num">5</span><span class="step-text">Save sequence. Photographer sees exactly this configuration the next time they open the app for that rooftop</span></div>
+              </div>
+              <div class="tip-row">Always confirm the overlay sequence on a training call with the person who will be doing the actual shooting, not the GM. The GM approves it; the photographer has to live with it.</div>
+              <div class="video-row">
+                <span class="video-label">How-to video</span>
+                <div class="video-status"><span class="video-dot dot-pending"></span><span class="video-text">Pending</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="uc-card" data-spyne="OB" data-dealer="Marketing" data-usage="internal" data-tier="Lite" data-video="pending">
+            <div class="uc-card-head">
+              <div class="uc-title">Background selection and sample approval workflow</div>
+              <div class="uc-card-head-badges">
+                <span class="spyne-badge spyne-ob">OB</span>
+                <span class="usage-badge usage-internal">Internal Only</span>
+                <span class="uc-source src-calls">Calls</span>
+              </div>
+            </div>
+            <div class="uc-card-body">
+              <div class="steps">
+                <div class="steps-label">How it works</div>
+                <div class="step"><span class="step-num">1</span><span class="step-text">Share the background catalog link (85-90 designs: turntables, showrooms, outdoor, custom environments). Each design has a 5-digit code</span></div>
+                <div class="step"><span class="step-num">2</span><span class="step-text">Dealer picks 1 design code and shares back. They also confirm: logo placement preference (back wall, bottom banner, number plate only), 3D vs flat logo, color tone preference for the overlay to match their brand</span></div>
+                <div class="step"><span class="step-num">3</span><span class="step-text">Creative team creates samples using 2-3 actual cars from the dealer's existing inventory. Share 3-5 sample images on the email thread</span></div>
+                <div class="step"><span class="step-num">4</span><span class="step-text">Dealer approves or requests changes. Changes go back to creative team. Turnaround: 24-48 hours per revision</span></div>
+                <div class="step"><span class="step-num">5</span><span class="step-text">Once approved: background made live on console. OB manager creates login credentials for the dealer team and schedules the app training call</span></div>
+              </div>
+              <div class="tip-row">For multi-rooftop groups: confirm if they want the same background across all locations or different backgrounds per rooftop. Different backgrounds require separate BGIDs and separate sample approvals.</div>
+              <div class="video-row">
+                <span class="video-label">How-to video</span>
+                <div class="video-status"><span class="video-dot dot-pending"></span><span class="video-text">Pending</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="uc-card" data-spyne="OB" data-dealer="Lot Marketing" data-usage="internal" data-tier="Lite" data-video="pending">
+            <div class="uc-card-head">
+              <div class="uc-title">Enable QC, promotional overlay toggle, and go-live checklist</div>
+              <div class="uc-card-head-badges">
+                <span class="spyne-badge spyne-ob">OB</span>
+                <span class="usage-badge usage-internal">Internal Only</span>
+                <span class="uc-source src-calls">Calls</span>
+              </div>
+            </div>
+            <div class="uc-card-body">
+              <div class="steps">
+                <div class="steps-label">How it works</div>
+                <div class="step"><span class="step-num">1</span><span class="step-text"><strong>Enable QC</strong>: QC is off by default. Go to console backend settings and enable quality check for the rooftop once background is live and integration confirmed. Without this, processed images skip manual review</span></div>
+                <div class="step"><span class="step-num">2</span><span class="step-text"><strong>Enable Smart Campaigns toggle</strong>: go to <strong>Settings > Studio > Media Kit</strong>. The promotional overlay feature is off by default. Toggle on per rooftop only when dealer is ready to use it</span></div>
+                <div class="step"><span class="step-num">3</span><span class="step-text"><strong>Go-live checklist</strong> before declaring a dealer live: background approved and live, IMS integration active, credentials shared, test shoot done in Test team, images visible in console with correct background, QC enabled</span></div>
+                <div class="step"><span class="step-num">4</span><span class="step-text">Process the existing inventory batch after go-live. Confirm with dealer how many active VINs are in the feed -- first batch may take 24-48 hours to process fully</span></div>
+              </div>
+              <div class="tip-row">Never declare a dealer live without confirming images are appearing on the website. Published in Spyne console does not always mean visible on website -- verify the VDP directly.</div>
+              <div class="video-row">
+                <span class="video-label">How-to video</span>
+                <div class="video-status"><span class="video-dot dot-pending"></span><span class="video-text">Pending</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="uc-card" data-spyne="OB CS" data-dealer="GM" data-usage="internal" data-tier="Lite" data-video="pending">
+            <div class="uc-card-head">
+              <div class="uc-title">Aspect ratio and image format configuration per dealer website</div>
+              <div class="uc-card-head-badges">
+                <span class="spyne-badge spyne-ob-cs">OB + CS</span>
+                <span class="usage-badge usage-internal">Internal Only</span>
+                <span class="uc-source src-calls">Calls</span>
+              </div>
+            </div>
+            <div class="uc-card-body">
+              <div class="steps">
+                <div class="steps-label">How it works</div>
+                <div class="step"><span class="step-num">1</span><span class="step-text">Before going live, check the dealer's website to confirm the image display ratio: most use <strong>16:9 landscape</strong> but some use 4:3 or square</span></div>
+                <div class="step"><span class="step-num">2</span><span class="step-text">When creating the background, select the correct aspect ratio in the background creation tool. Wrong aspect ratio = black bars or cropped cars on the VDP</span></div>
+                <div class="step"><span class="step-num">3</span><span class="step-text">If dealer uses a non-standard ratio: raise to creative team before sample creation so all samples are in the correct format</span></div>
+                <div class="step"><span class="step-num">4</span><span class="step-text">For dealers with multiple website providers across rooftops (e.g. DealerOn for one location, Dealer.com for another): confirm the ratio per rooftop separately</span></div>
+              </div>
+              <div class="video-row">
+                <span class="video-label">How-to video</span>
+                <div class="video-status"><span class="video-dot dot-pending"></span><span class="video-text">Pending</span></div>
+              </div>
+            </div>
+          </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    </div>
+
+  </div>
+
+  <!-- OBJECTIONS -->
+  <div class="tab-panel" id="panel-objections">
+    <div class="section-head">
+      <span class="section-title">All Objections &amp; Solutions</span>
+      <span class="count-badge" id="visible-obj-count">14 shown</span>
+    </div>
+    <div class="obj-table-wrap">
+      <table id="obj-table">
+        <thead>
+          <tr>
+            <th style="width:22%">Objection / Problem</th>
+            <th style="width:8%">Type</th>
+            <th style="width:7%">Severity</th>
+            <th style="width:12%">Spyne Dept</th>
+            <th style="width:12%">Dealer Dept</th>
+            <th style="width:22%">Solved by</th>
+            <th style="width:17%">Video Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr data-type="bug" data-solved="no">
+            <td><div class="obj-title">360 interior camera gives white screen on load</div><div class="obj-quote">"When we were doing the interior 360 camera, it was getting giving us a white screen. It wouldn't load the viewer." - Smartlot</div></td>
+            <td><span class="meta-chip chip-feature">App Bug</span></td>
+            <td><span class="severity-chip sev-high">High</span></td>
+            <td></td>
+            <td><span class="meta-chip chip-dept-dealer">Lot / Photo</span></td>
+            <td><span class="solve-tag not-yet">Product fix needed</span></td>
+            <td><div class="obj-video-cell"><span class="video-dot dot-pending"></span><span class="video-text">Pending</span></div></td>
+          </tr>
+          <tr data-type="bug" data-solved="no">
+            <td><div class="obj-title">App uploads stuck / crash requires restart</div><div class="obj-quote">"The app will say I need to close it and reopen it... every once in a while, a car just gets stuck." - Carma Automotive</div></td>
+            <td><span class="meta-chip chip-feature">App Bug</span></td>
+            <td><span class="severity-chip sev-high">High</span></td>
+            <td></td>
+            <td><span class="meta-chip chip-dept-dealer">Lot / Photo</span></td>
+            <td><span class="solve-tag not-yet">Product fix needed</span></td>
+            <td><div class="obj-video-cell"><span class="video-dot dot-pending"></span><span class="video-text">Pending</span></div></td>
+          </tr>
+          <tr data-type="bug" data-solved="yes">
+            <td><div class="obj-title">Car doesn't fit in frame / AI guidance arrows not responding</div><div class="obj-quote">"He told me go to the right, go up. It is too close. He don't recognize the car." - Curry Acura</div></td>
+            <td><span class="meta-chip chip-feature">App Bug</span></td>
+            <td><span class="severity-chip sev-high">High</span></td>
+            <td></td>
+            <td><span class="meta-chip chip-dept-dealer">Lot / Photo</span></td>
+            <td><span class="solve-tag">UC1: Shoot guide video</span><span class="solve-tag">Stand 6-10 ft, chest height, select body type first</span></td>
+            <td><div class="obj-video-cell"><span class="video-dot dot-pending"></span><span class="video-text">Pending</span></div></td>
+          </tr>
+          <tr data-type="bug" data-solved="no">
+            <td><div class="obj-title">Free backgrounds not loading / video recording error messages</div><div class="obj-quote">"The free backgrounds are not working, so I can't do a video of that because the options are not there." - Clarvio</div></td>
+            <td><span class="meta-chip chip-feature">App Bug</span></td>
+            <td><span class="severity-chip sev-high">High</span></td>
+            <td></td>
+            <td><span class="meta-chip chip-dept-dealer">Lot / Photo</span></td>
+            <td><span class="solve-tag not-yet">Product fix needed</span></td>
+            <td><div class="obj-video-cell"><span class="video-dot dot-pending"></span><span class="video-text">Pending</span></div></td>
+          </tr>
+          <tr data-type="bug" data-solved="yes">
+            <td><div class="obj-title">Console Studio AI tab shows blank / not rendering</div><div class="obj-quote">"Studio AI, nothing comes up. See what I mean?" - Portsmouth Auto</div></td>
+            <td><span class="meta-chip chip-feature">App Bug</span></td>
+            <td><span class="severity-chip sev-med">Med</span></td>
+            <td></td>
+            <td><span class="meta-chip chip-dept-dealer">Marketing</span></td>
+            <td><span class="solve-tag">UC13: Log out and log back in to pick up UI update</span></td>
+            <td><div class="obj-video-cell"><span class="video-dot dot-pending"></span><span class="video-text">Pending</span></div></td>
+          </tr>
+          <tr data-type="training" data-solved="yes">
+            <td><div class="obj-title">Clients do not know what the console is or that it exists</div><div class="obj-quote">"What do you mean by console?" - PDX Wheels and Deals</div></td>
+            <td><span class="meta-chip chip-feature">Training Gap</span></td>
+            <td><span class="severity-chip sev-high">High</span></td>
+            <td></td>
+            <td><span class="meta-chip chip-dept-dealer">Lot / Photo</span><span class="meta-chip chip-dept-dealer">Marketing</span></td>
+            <td><span class="solve-tag">UC3, UC4, UC5, UC6: Console walkthrough series</span></td>
+            <td><div class="obj-video-cell"><span class="video-dot dot-pending"></span><span class="video-text">Pending</span></div></td>
+          </tr>
+          <tr data-type="training" data-solved="yes">
+            <td><div class="obj-title">Don't know how to change backgrounds from the gallery</div><div class="obj-quote">"I had no idea how to do that." - World Car Auto Group</div></td>
+            <td><span class="meta-chip chip-feature">Training Gap</span></td>
+            <td><span class="severity-chip sev-med">Med</span></td>
+            <td></td>
+            <td><span class="meta-chip chip-dept-dealer">Lot / Photo</span></td>
+            <td><span class="solve-tag">UC3: Edit in Virtual Studio video</span></td>
+            <td><div class="obj-video-cell"><span class="video-dot dot-pending"></span><span class="video-text">Pending</span></div></td>
+          </tr>
+          <tr data-type="training" data-solved="yes">
+            <td><div class="obj-title">Don't know custom backgrounds can be created and modified via BGID</div><div class="obj-quote">"Did I show you how you can create a background all by yourself on the platform?" - Netlook</div></td>
+            <td><span class="meta-chip chip-feature">Training Gap</span></td>
+            <td><span class="severity-chip sev-med">Med</span></td>
+            <td></td>
+            <td><span class="meta-chip chip-dept-dealer">Marketing</span></td>
+            <td><span class="solve-tag">UC6: BGID and custom background setup video</span></td>
+            <td><div class="obj-video-cell"><span class="video-dot dot-pending"></span><span class="video-text">Pending</span></div></td>
+          </tr>
+          <tr data-type="training" data-solved="yes">
+            <td><div class="obj-title">Everyone sharing one login credential</div><div class="obj-quote">"They will be logging in through your email ID and password. Right?" - DJS Autos</div></td>
+            <td><span class="meta-chip chip-feature">Training Gap</span></td>
+            <td><span class="severity-chip sev-med">Med</span></td>
+            <td></td>
+            <td><span class="meta-chip chip-dept-dealer">Lot / Photo</span></td>
+            <td><span class="solve-tag">UC12: Multi-user and rooftop setup video</span></td>
+            <td><div class="obj-video-cell"><span class="video-dot dot-pending"></span><span class="video-text">Pending</span></div></td>
+          </tr>
+          <tr data-type="training" data-solved="yes">
+            <td><div class="obj-title">Team going back to reshoot cars when 360 failed, not needed</div><div class="obj-quote">"I just wanna make sure so these guys aren't going back and trying to do a 360." - Dimmitt Automotive</div></td>
+            <td><span class="meta-chip chip-feature">Training Gap</span></td>
+            <td><span class="severity-chip sev-high">High</span></td>
+            <td></td>
+            <td><span class="meta-chip chip-dept-dealer">Lot / Photo</span></td>
+            <td><span class="solve-tag">UC5: QC status explainer video</span></td>
+            <td><div class="obj-video-cell"><span class="video-dot dot-pending"></span><span class="video-text">Pending</span></div></td>
+          </tr>
+          <tr data-type="commercial" data-solved="no">
+            <td><div class="obj-title">Pricing vs competitors: "why are you 3x the cost?"</div><div class="obj-quote">"I need to justify why I'm paying $4,000+ a month when I can get this for $1,200." - Teton Solutions</div></td>
+            <td><span class="meta-chip chip-feature">Commercial</span></td>
+            <td><span class="severity-chip sev-high">High</span></td>
+            <td></td>
+            <td><span class="meta-chip chip-dept-dealer">GM / Owner</span></td>
+            <td><span class="solve-tag not-yet">ROI proof content needed</span></td>
+            <td><div class="obj-video-cell"><span class="video-dot dot-pending"></span><span class="video-text">Pending</span></div></td>
+          </tr>
+          <tr data-type="commercial" data-solved="no">
+            <td><div class="obj-title">Not seeing ROI signal in the first 2 weeks</div><div class="obj-quote">"Just two weeks, that's too small a number for us to say there is a conversion happening." - CallSource sync</div></td>
+            <td><span class="meta-chip chip-feature">Commercial</span></td>
+            <td><span class="severity-chip sev-high">High</span></td>
+            <td></td>
+            <td><span class="meta-chip chip-dept-dealer">GM / Owner</span><span class="meta-chip chip-dept-dealer">BDC</span></td>
+            <td><span class="solve-tag not-yet">Benchmark data + expected timeline asset needed</span></td>
+            <td><div class="obj-video-cell"><span class="video-dot dot-pending"></span><span class="video-text">Pending</span></div></td>
+          </tr>
+          <tr data-type="commercial" data-solved="no">
+            <td><div class="obj-title">Resistance to adding another app and login</div><div class="obj-quote">"They do not wanna use another tool. They do not want another dashboard to log in to." - Don Hewlett</div></td>
+            <td><span class="meta-chip chip-feature">Commercial</span></td>
+            <td><span class="severity-chip sev-med">Med</span></td>
+            <td></td>
+            <td><span class="meta-chip chip-dept-dealer">GM / Owner</span></td>
+            <td><span class="solve-tag">DMS/IMS integration walkthrough video</span><span class="solve-tag not-yet">Change management one-pager needed</span></td>
+            <td><div class="obj-video-cell"><span class="video-dot dot-pending"></span><span class="video-text">Pending</span></div></td>
+          </tr>
+          <tr data-type="commercial" data-solved="no">
+            <td><div class="obj-title">Competitor offering social media content Spyne has not shipped</div><div class="obj-quote">"We lost clients because AutoFox is offering social media content we promised for months." - Inmersiva</div></td>
+            <td><span class="meta-chip chip-feature">Commercial</span></td>
+            <td><span class="severity-chip sev-high">High</span></td>
+            <td></td>
+            <td><span class="meta-chip chip-dept-dealer">Marketing</span></td>
+            <td><span class="solve-tag not-yet">Product roadmap gap — no current solve</span></td>
+            <td><div class="obj-video-cell"><span class="video-dot dot-pending"></span><span class="video-text">Pending</span></div></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+
+
+</div>
+
+<script>
+  function switchTab(tab, el) {
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('panel-' + tab).classList.add('active');
+    el.classList.add('active');
+    document.getElementById('uc-filters').classList.toggle('hidden', tab !== 'usecases');
+    document.getElementById('obj-filters').classList.toggle('hidden', tab !== 'objections');
+  }
+
+  function switchModule(id, el) {
+    document.querySelectorAll('.mod-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.mod-tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('mod-' + id).classList.add('active');
+    el.classList.add('active');
+    applyUC();
+  }
+
+  function toggleSub(head) {
+    const body = head.nextElementSibling;
+    const arrow = head.querySelector('.sub-arrow');
+    const isOpen = !body.classList.contains('collapsed');
+    body.classList.toggle('collapsed', isOpen);
+    arrow.textContent = isOpen ? '▸' : '▾';
+  }
+
+  let af = { spyne: 'all', dealer: 'all', usage: 'all' };
+
+  function selectFilter(group, val) { af[group] = val; applyUC(); }
+
+  function toggleFilter(el, group, val) {
+    document.querySelectorAll('#uc-filters .filter-chip').forEach(c => {
+      if (c.getAttribute('onclick') && c.getAttribute('onclick').includes("'" + group + "'")) c.classList.remove('active');
+    });
+    el.classList.add('active');
+    af[group] = val;
+    applyUC();
+  }
+
+  function applyUC() {
+    let totalVis = 0;
+    document.querySelectorAll('.uc-card').forEach(card => {
+      const s = card.dataset.spyne || '';
+      const d = card.dataset.dealer || '';
+      const u = card.dataset.usage || '';
+      const ok = (af.spyne === 'all' || s.includes(af.spyne)) &&
+                 (af.dealer === 'all' || d.includes(af.dealer)) &&
+                 (af.usage === 'all' || u === af.usage || u === 'both');
+      card.classList.toggle('hidden', !ok);
+      if (ok) totalVis++;
+    });
+    document.querySelectorAll('.sub-section').forEach(sub => {
+      const vis = sub.querySelectorAll('.uc-card:not(.hidden)').length;
+      const c = sub.querySelector('.sub-count');
+      if (c) c.textContent = vis + ' use case' + (vis !== 1 ? 's' : '');
+      sub.classList.toggle('hidden', vis === 0);
+    });
+    const el = document.getElementById('visible-uc-count');
+    if (el) el.textContent = totalVis + ' shown';
+  }
+
+  let aof = { type: 'all', solved: 'all' };
+
+  function toggleObjFilter(el, group, val) {
+    document.querySelectorAll('#obj-filters .filter-chip').forEach(c => {
+      if (c.getAttribute('onclick') && c.getAttribute('onclick').includes("'" + group + "'")) c.classList.remove('active');
+    });
+    el.classList.add('active');
+    aof[group] = val;
+    applyObj();
+  }
+
+  function applyObj() {
+    let vis = 0;
+    document.querySelectorAll('#obj-table tbody tr').forEach(row => {
+      const ok = (aof.type === 'all' || row.dataset.type === aof.type) &&
+                 (aof.solved === 'all' || row.dataset.solved === aof.solved);
+      row.classList.toggle('hidden', !ok);
+      if (ok) vis++;
+    });
+    document.getElementById('visible-obj-count').textContent = vis + ' shown';
+  }
+  function updateQCStatus(el, uid) {
+    const val = el.value;
+    el.className = 'qc-status-select ' + val;
+    try { localStorage.setItem('qcs-' + uid, val); } catch(e){}
+  }
+
+  function saveNote(el, uid) {
+    try { localStorage.setItem('qcn-' + uid, el.value); } catch(e){}
+  }
+
+  function loadQCData() {
+    try {
+      document.querySelectorAll('.qc-status-select').forEach(el => {
+        const val = localStorage.getItem(el.id);
+        if (val) { el.value = val; el.className = 'qc-status-select ' + val; }
+      });
+      document.querySelectorAll('.qc-notes').forEach(el => {
+        const val = localStorage.getItem(el.id);
+        if (val) el.value = val;
+      });
+    } catch(e){}
+  }
+
+  window.addEventListener('load', loadQCData);
+
+</script>
+</body>
+</html>
